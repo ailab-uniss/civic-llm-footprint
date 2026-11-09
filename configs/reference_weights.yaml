@@ -1,0 +1,10 @@
+# Generator weights for the market-share-weighted LLM reference P_M (study analysis, `analysis.py --weights`).
+# Source: StatCounter Global Stats, AI chatbot market share, Europe, monthly, April 2025 - September 2026 (data/sc_eu.csv;
+# October 2026 excluded: abrupt jump to ChatGPT 43% / Gemini 39% consistent with a change of measurement).
+# Shares of web traffic to chatbot sites; Microsoft Copilot (GPT-based) is counted with ChatGPT, Perplexity (mixed models)
+# and DeepSeek are left out; the three shares are renormalised. Each product is represented by its current API model.
+# Mean shares: ChatGPT+Copilot 86.3%, Gemini 5.8%, Claude 1.8% over 18 months.
+weights:
+  gpt-5.4-mini: 0.919
+  gemini-3.6-flash: 0.062
+  claude-haiku-5-5: 0.019

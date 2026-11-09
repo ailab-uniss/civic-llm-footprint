@@ -1,0 +1,26 @@
+# Generator registry. 'path' is the local path or HF id on the GPU server; 'args' are passed to generate.py run.
+# role: ref = open model, in the equal-weight reference (held out in turn in the benchmark); extra = commercial model, in the
+# market-weighted reference of the study; legacy = benchmark only, always held out, never in a reference.
+generators:
+  gpt-oss-20b:       {path: models/gpt-oss-20b, family: OpenAI gpt-oss, params: 21B (3.6B active), quant: MXFP4 (native), role: ref,
+                      args: "--max-model-len 4096 --gpu-util 0.92"}
+  gemma-2-9b-it:     {path: models/gemma-2-9b-it-bnb-4bit, family: Google Gemma 2, params: 9B, quant: NF4 (bitsandbytes), role: ref,
+                      args: "--quantization bitsandbytes --max-model-len 4096 --gpu-util 0.90"}
+  mistral-small-24b: {path: models/Mistral-Small-24B-Instruct-2501-bnb-4bit, family: Mistral Small 3, params: 24B, quant: NF4 (bitsandbytes), role: ref,
+                      args: "--quantization bitsandbytes --max-model-len 4096 --gpu-util 0.92"}
+  qwen2.5-7b:        {path: Qwen/Qwen2.5-7B-Instruct, family: Alibaba Qwen 2.5, params: 7B, quant: bf16, role: ref,
+                      args: "--max-model-len 4096 --gpu-util 0.90"}
+  eurollm-9b:        {path: utter-project/EuroLLM-9B-Instruct, family: EuroLLM, params: 9B, quant: bf16, role: ref,
+                      args: "--max-model-len 4096 --gpu-util 0.90"}
+  salamandra-7b:     {path: BSC-LT/salamandra-7b-instruct, family: BSC Salamandra, params: 7B, quant: bf16, role: ref,
+                      args: "--max-model-len 4096 --gpu-util 0.90"}
+  llama-3.1-8b:      {path: meta-llama/Llama-3.1-8B-Instruct, family: Meta Llama 3.1, params: 8B, quant: bf16, role: ref,
+                      args: "--max-model-len 4096 --gpu-util 0.90"}
+  gpt-5.4-mini:      {path: gpt-5.4-mini, family: OpenAI (API), params: undisclosed, quant: n/a, role: extra,
+                      args: "--backend openai --limit-per-lang 400"}
+  claude-haiku-5-5:  {path: claude-haiku-5-5, family: Anthropic (API), params: undisclosed, quant: n/a, role: extra,
+                      args: "--backend anthropic --limit-per-lang 800"}
+  gemini-3.6-flash:  {path: gemini-3.6-flash, family: Google (API), params: undisclosed, quant: n/a, role: extra,
+                      args: "--backend gemini --limit-per-lang 800"}
+  gpt-4o-mini:       {path: gpt-4o-mini-2024-07-18, family: "OpenAI (API, July 2024)", params: undisclosed, quant: n/a, role: legacy,
+                      args: "--backend openai --limit-per-lang 400"}

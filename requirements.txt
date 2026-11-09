@@ -1,0 +1,17 @@
+vllm==0.11.0
+transformers<5
+pandas
+pyarrow
+datasketch
+sentence-transformers
+faiss-cpu
+statsmodels
+scipy
+spacy
+lingua-language-detector
+scikit-learn
+pyyaml
+requests
+matplotlib
+bitsandbytes>=0.46.1
+openai

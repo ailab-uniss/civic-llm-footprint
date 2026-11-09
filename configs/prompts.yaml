@@ -1,0 +1,492 @@
+en:
+  lang_name: English
+  rewrite:
+  - 'Improve the following text that I want to post on my city''s participation platform ({platform}). Keep the meaning, correct mistakes and make it clearer. Return only the revised text.
+
+
+    {text}'
+  - 'Rewrite this proposal/comment for a municipal participation website so that it is well written and convincing. Keep my ideas. Only output the new text.
+
+
+    {text}'
+  - 'Please edit the text below, which I am submitting to the city council''s online participation platform. Fix grammar and style and make it read well. Output just the text.
+
+
+    {text}'
+  generate:
+  - 'Write a contribution (about {n_words} words) for my city''s online participation platform ({platform}) on the following topic: "{title}". Write as a resident. Return only the text.'
+  - 'I am a citizen and I want to submit the following idea to the participatory budgeting platform of my city: "{title}". Write the proposal text for me (around {n_words} words). Only output the proposal.'
+  - 'Draft a comment of about {n_words} words that a resident could post on the city''s participation website about: "{title}". Return only the comment text.'
+  translate:
+  - 'Translate the following text into English and polish it so that it reads naturally. It is a contribution to a city participation platform. Return only the English text.
+
+
+    {text}'
+  - 'I wrote this in {src_lang_name}. Translate it into fluent English for my city''s participation platform and improve the wording. Only output the translation.
+
+
+    {text}'
+  - 'Turn the following {src_lang_name} text into a well-written English contribution for a municipal consultation website. Output only the English text.
+
+
+    {text}'
+  rewrite_consult:
+  - 'Improve the following feedback that I want to submit to a public consultation on a proposed policy ({platform}). Keep the meaning, correct mistakes and make it clearer. Return only the revised text.
+
+
+    {text}'
+  - 'Rewrite this comment on a draft regulation so that it is well written and convincing. Keep my arguments. Only output the new text.
+
+
+    {text}'
+  - 'Please edit the text below, which I am submitting as a response to an official public consultation. Fix grammar and style and make it read well. Output just the text.
+
+
+    {text}'
+  generate_consult:
+  - 'Write a response (about {n_words} words) to a public consultation ({platform}) on the following initiative: "{title}". Write as a concerned citizen. Return only the text.'
+  - 'I want to submit feedback on a proposed law or regulation about: "{title}". Write the feedback text for me (around {n_words} words), stating my position and arguments. Only output the feedback.'
+  - 'Draft a public comment of about {n_words} words that a member of the public could submit on a government proposal about: "{title}". Return only the comment text.'
+  generate_news:
+  - 'Write a news article (about {n_words} words) that begins with the following lead: "{title}". Return only the article text.'
+  - 'You are a journalist. Write a short news report of around {n_words} words on this story: "{title}". Only output the report.'
+  - 'Draft a news article of about {n_words} words for an online newspaper on the following: "{title}". Return only the text.'
+  rewrite_news:
+  - 'Improve the following news article draft. Keep the facts and the meaning, correct mistakes and make it clearer. Return only the revised text.
+  
+  
+    {text}'
+  - 'Rewrite this news report so that it is well written and reads like a professional article. Keep all the information. Only output the new text.
+  
+  
+    {text}'
+  - 'Please edit the article below for publication on a news website. Fix grammar and style and make it read well. Output just the text.
+  
+  
+    {text}'
+es:
+  lang_name: Español
+  rewrite:
+  - 'Mejora el siguiente texto que quiero publicar en la plataforma de participación de mi ciudad ({platform}). Mantén el significado, corrige los errores y hazlo más claro. Devuelve solo el texto revisado.
+
+
+    {text}'
+  - 'Reescribe esta propuesta/comentario para la web de participación municipal de modo que esté bien redactado y sea convincente. Conserva mis ideas. Escribe solo el texto nuevo.
+
+
+    {text}'
+  - 'Por favor, edita el texto de abajo, que voy a enviar a la plataforma de participación en línea del ayuntamiento. Corrige la gramática y el estilo y haz que se lea bien. Responde solo con el texto.
+
+
+    {text}'
+  generate:
+  - 'Escribe una aportación (de unas {n_words} palabras) para la plataforma de participación en línea de mi ciudad ({platform}) sobre el siguiente tema: "{title}". Escribe como vecino o vecina. Devuelve solo el texto.'
+  - 'Soy ciudadano y quiero presentar esta idea en la plataforma de presupuestos participativos de mi ciudad: "{title}". Redacta el texto de la propuesta (unas {n_words} palabras). Escribe solo la propuesta.'
+  - 'Redacta un comentario de unas {n_words} palabras que un vecino podría publicar en la web de participación del ayuntamiento sobre: "{title}". Devuelve solo el texto del comentario.'
+  translate:
+  - 'Traduce el siguiente texto al español y púlelo para que suene natural. Es una aportación a una plataforma de participación ciudadana. Devuelve solo el texto en español.
+
+
+    {text}'
+  - 'He escrito esto en {src_lang_name}. Tradúcelo a un español fluido para la plataforma de participación de mi ciudad y mejora la redacción. Responde solo con la traducción.
+
+
+    {text}'
+  - 'Convierte el siguiente texto en {src_lang_name} en una aportación en español bien escrita para una web de consulta municipal. Escribe solo el texto en español.
+
+
+    {text}'
+  rewrite_consult:
+  - 'Mejora la siguiente aportación que quiero presentar en una consulta pública sobre una propuesta normativa ({platform}). Mantén el significado, corrige los errores y hazla más clara. Devuelve solo el texto revisado.
+
+
+    {text}'
+  - 'Reescribe este comentario sobre un proyecto de reglamento para que esté bien redactado y sea convincente. Mantén mis argumentos. Escribe solo el texto nuevo.
+
+
+    {text}'
+  - 'Corrige el texto siguiente, que presento como respuesta a una consulta pública oficial. Arregla la gramática y el estilo para que se lea bien. Devuelve solo el texto.
+
+
+    {text}'
+  generate_consult:
+  - 'Escribe una respuesta (unas {n_words} palabras) a una consulta pública ({platform}) sobre la siguiente iniciativa: "{title}". Escribe como ciudadano afectado. Devuelve solo el texto.'
+  - 'Quiero presentar una aportación sobre una propuesta de ley o reglamento acerca de: "{title}". Redacta para mí el texto de la aportación (unas {n_words} palabras), con mi posición y mis argumentos. Escribe solo la aportación.'
+  - 'Redacta un comentario público de unas {n_words} palabras que un ciudadano podría presentar sobre una propuesta de la administración acerca de: "{title}". Devuelve solo el texto del comentario.'
+  generate_news:
+  - 'Escribe una noticia (de unas {n_words} palabras) que empiece con la siguiente entradilla: "{title}". Devuelve solo el texto de la noticia.'
+  - 'Eres periodista. Escribe una breve noticia de unas {n_words} palabras sobre este hecho: "{title}". Escribe solo la noticia.'
+  - 'Redacta un artículo de prensa de unas {n_words} palabras para un periódico digital sobre lo siguiente: "{title}". Devuelve solo el texto.'
+  rewrite_news:
+  - 'Mejora el siguiente borrador de noticia. Mantén los hechos y el significado, corrige los errores y hazlo más claro. Devuelve solo el texto revisado.
+  
+  
+    {text}'
+  - 'Reescribe esta noticia para que esté bien redactada y se lea como un artículo profesional. Conserva toda la información. Escribe solo el texto nuevo.
+  
+  
+    {text}'
+  - 'Por favor, edita el artículo de abajo para publicarlo en un sitio web de noticias. Corrige la gramática y el estilo y haz que se lea bien. Responde solo con el texto.
+  
+  
+    {text}'
+ca:
+  lang_name: Català
+  rewrite:
+  - 'Millora el text següent, que vull publicar a la plataforma de participació de la meva ciutat ({platform}). Mantén el significat, corregeix els errors i fes-lo més clar. Retorna només el text revisat.
+
+
+    {text}'
+  - 'Reescriu aquesta proposta/comentari per al web de participació municipal perquè estigui ben redactat i sigui convincent. Conserva les meves idees. Escriu només el text nou.
+
+
+    {text}'
+  - 'Si us plau, edita el text de sota, que enviaré a la plataforma de participació en línia de l''ajuntament. Corregeix la gramàtica i l''estil i fes que es llegeixi bé. Respon només amb el text.
+
+
+    {text}'
+  generate:
+  - 'Escriu una aportació (d''unes {n_words} paraules) per a la plataforma de participació en línia de la meva ciutat ({platform}) sobre el tema següent: "{title}". Escriu com a veí o veïna. Retorna només el text.'
+  - 'Sóc ciutadà i vull presentar aquesta idea a la plataforma de pressupostos participatius de la meva ciutat: "{title}". Redacta el text de la proposta (unes {n_words} paraules). Escriu només la proposta.'
+  - 'Redacta un comentari d''unes {n_words} paraules que un veí podria publicar al web de participació de l''ajuntament sobre: "{title}". Retorna només el text del comentari.'
+  translate:
+  - 'Tradueix el text següent al català i poleix-lo perquè soni natural. És una aportació a una plataforma de participació ciutadana. Retorna només el text en català.
+
+
+    {text}'
+  - 'He escrit això en {src_lang_name}. Tradueix-ho a un català fluid per a la plataforma de participació de la meva ciutat i millora''n la redacció. Respon només amb la traducció.
+
+
+    {text}'
+  - 'Converteix el text següent en {src_lang_name} en una aportació en català ben escrita per a un web de consulta municipal. Escriu només el text en català.
+
+
+    {text}'
+  generate_news:
+  - 'Escriu una notícia (d''unes {n_words} paraules) que comenci amb la següent entradeta: "{title}". Retorna només el text de la notícia.'
+  - 'Ets periodista. Escriu una notícia breu d''unes {n_words} paraules sobre aquest fet: "{title}". Escriu només la notícia.'
+  - 'Redacta un article de premsa d''unes {n_words} paraules per a un diari digital sobre el següent: "{title}". Retorna només el text.'
+  rewrite_news:
+  - 'Millora el següent esborrany de notícia. Mantén els fets i el significat, corregeix els errors i fes-lo més clar. Retorna només el text revisat.
+  
+  
+    {text}'
+  - 'Reescriu aquesta notícia perquè estigui ben redactada i es llegeixi com un article professional. Conserva tota la informació. Escriu només el text nou.
+  
+  
+    {text}'
+  - 'Si us plau, edita l''article de sota per publicar-lo en un web de notícies. Corregeix la gramàtica i l''estil i fes que es llegeixi bé. Respon només amb el text.
+  
+  
+    {text}'
+fr:
+  lang_name: Français
+  rewrite:
+  - 'Améliore le texte suivant que je veux publier sur la plateforme de participation de ma ville ({platform}). Garde le sens, corrige les erreurs et rends-le plus clair. Renvoie uniquement le texte révisé.
+
+
+    {text}'
+  - 'Réécris cette proposition/ce commentaire pour le site de participation municipale afin qu''il soit bien rédigé et convaincant. Conserve mes idées. N''écris que le nouveau texte.
+
+
+    {text}'
+  - 'Merci de corriger le texte ci-dessous, que je vais soumettre sur la plateforme de participation en ligne de la mairie. Corrige la grammaire et le style pour qu''il se lise bien. Réponds uniquement avec le texte.
+
+
+    {text}'
+  generate:
+  - 'Rédige une contribution (environ {n_words} mots) pour la plateforme de participation en ligne de ma ville ({platform}) sur le sujet suivant : « {title} ». Écris en tant qu''habitant. Renvoie uniquement le texte.'
+  - 'Je suis un citoyen et je veux déposer cette idée sur la plateforme de budget participatif de ma ville : « {title} ». Rédige le texte de la proposition (environ {n_words} mots). N''écris que la proposition.'
+  - 'Rédige un commentaire d''environ {n_words} mots qu''un habitant pourrait publier sur le site de participation de la ville au sujet de : « {title} ». Renvoie uniquement le texte du commentaire.'
+  translate:
+  - 'Traduis le texte suivant en français et peaufine-le pour qu''il soit naturel. C''est une contribution à une plateforme de participation citoyenne. Renvoie uniquement le texte en français.
+
+
+    {text}'
+  - 'J''ai écrit ceci en {src_lang_name}. Traduis-le dans un français fluide pour la plateforme de participation de ma ville et améliore la formulation. Réponds uniquement avec la traduction.
+
+
+    {text}'
+  - 'Transforme le texte suivant en {src_lang_name} en une contribution en français bien rédigée pour un site de consultation municipale. N''écris que le texte en français.
+
+
+    {text}'
+  rewrite_consult:
+  - 'Améliore la contribution suivante que je veux déposer dans une consultation publique sur un projet de réglementation ({platform}). Garde le sens, corrige les erreurs et rends-la plus claire. Renvoie uniquement le texte révisé.
+
+
+    {text}'
+  - 'Réécris cet avis sur un projet de texte réglementaire pour qu''il soit bien rédigé et convaincant. Garde mes arguments. Ne renvoie que le nouveau texte.
+
+
+    {text}'
+  - 'Corrige le texte ci-dessous, que je soumets en réponse à une consultation publique officielle. Corrige la grammaire et le style pour qu''il se lise bien. Renvoie seulement le texte.
+
+
+    {text}'
+  generate_consult:
+  - 'Rédige une réponse (environ {n_words} mots) à une consultation publique ({platform}) sur l''initiative suivante : « {title} ». Écris en tant que citoyen concerné. Renvoie uniquement le texte.'
+  - 'Je veux déposer un avis sur un projet de loi ou de règlement concernant : « {title} ». Rédige pour moi le texte de l''avis (environ {n_words} mots), avec ma position et mes arguments. N''écris que l''avis.'
+  - 'Rédige un commentaire public d''environ {n_words} mots qu''un citoyen pourrait déposer sur une proposition des pouvoirs publics concernant : « {title} ». Renvoie seulement le texte du commentaire.'
+it:
+  lang_name: Italiano
+  rewrite:
+  - 'Migliora il testo seguente, che voglio pubblicare sulla piattaforma di partecipazione del mio comune ({platform}). Mantieni il significato, correggi gli errori e rendilo più chiaro. Restituisci solo il testo rivisto.
+
+
+    {text}'
+  - 'Riscrivi questa proposta/commento per il sito di partecipazione del comune in modo che sia ben scritto e convincente. Conserva le mie idee. Scrivi solo il nuovo testo.
+
+
+    {text}'
+  - 'Per favore, correggi il testo qui sotto, che invierò alla piattaforma di partecipazione online del comune. Sistema grammatica e stile e fallo leggere bene. Rispondi solo con il testo.
+
+
+    {text}'
+  generate:
+  - 'Scrivi un contributo (circa {n_words} parole) per la piattaforma di partecipazione online del mio comune ({platform}) sul seguente tema: "{title}". Scrivi come residente. Restituisci solo il testo.'
+  - 'Sono un cittadino e voglio presentare questa idea sulla piattaforma di bilancio partecipativo del mio comune: "{title}". Scrivi per me il testo della proposta (circa {n_words} parole). Scrivi solo la proposta.'
+  - 'Scrivi un commento di circa {n_words} parole che un residente potrebbe pubblicare sul sito di partecipazione del comune riguardo a: "{title}". Restituisci solo il testo del commento.'
+  translate:
+  - 'Traduci il testo seguente in italiano e rifiniscilo in modo che suoni naturale. È un contributo a una piattaforma di partecipazione civica. Restituisci solo il testo in italiano.
+
+
+    {text}'
+  - 'Ho scritto questo in {src_lang_name}. Traducilo in un italiano scorrevole per la piattaforma di partecipazione del mio comune e migliora la formulazione. Rispondi solo con la traduzione.
+
+
+    {text}'
+  - 'Trasforma il testo seguente in {src_lang_name} in un contributo in italiano ben scritto per un sito di consultazione comunale. Scrivi solo il testo in italiano.
+
+
+    {text}'
+  rewrite_consult:
+  - 'Migliora il seguente contributo che voglio presentare in una consultazione pubblica su una proposta normativa ({platform}). Mantieni il significato, correggi gli errori e rendilo più chiaro. Restituisci solo il testo rivisto.
+
+
+    {text}'
+  - 'Riscrivi questo commento su uno schema di regolamento in modo che sia ben scritto e convincente. Mantieni le mie argomentazioni. Scrivi solo il nuovo testo.
+
+
+    {text}'
+  - 'Correggi il testo qui sotto, che presento come risposta a una consultazione pubblica ufficiale. Sistema grammatica e stile in modo che si legga bene. Restituisci soltanto il testo.
+
+
+    {text}'
+  generate_consult:
+  - 'Scrivi una risposta (circa {n_words} parole) a una consultazione pubblica ({platform}) sulla seguente iniziativa: "{title}". Scrivi come cittadino interessato. Restituisci solo il testo.'
+  - 'Voglio presentare un contributo su una proposta di legge o di regolamento riguardante: "{title}". Scrivi per me il testo del contributo (circa {n_words} parole), con la mia posizione e le mie argomentazioni. Scrivi solo il contributo.'
+  - 'Redigi un commento pubblico di circa {n_words} parole che un cittadino potrebbe presentare su una proposta dell''amministrazione riguardante: "{title}". Restituisci solo il testo del commento.'
+fi:
+  lang_name: Suomi
+  rewrite:
+  - 'Paranna seuraavaa tekstiä, jonka haluan julkaista kaupunkini osallistumisalustalla ({platform}). Säilytä merkitys, korjaa virheet ja tee tekstistä selkeämpi. Palauta vain muokattu teksti.
+
+
+    {text}'
+  - 'Kirjoita tämä ehdotus/kommentti uudelleen kunnan osallistumissivustolle niin, että se on hyvin kirjoitettu ja vakuuttava. Säilytä ajatukseni. Kirjoita vain uusi teksti.
+
+
+    {text}'
+  - 'Muokkaa alla oleva teksti, jonka lähetän kaupungin verkko-osallistumisalustalle. Korjaa kielioppi ja tyyli niin, että teksti on sujuva. Vastaa vain tekstillä.
+
+
+    {text}'
+  generate:
+  - 'Kirjoita noin {n_words} sanan ehdotus kaupunkini verkko-osallistumisalustalle ({platform}) seuraavasta aiheesta: "{title}". Kirjoita asukkaan näkökulmasta. Palauta vain teksti.'
+  - 'Olen kaupunkilainen ja haluan esittää tämän idean kaupunkini osallistuvan budjetoinnin alustalla: "{title}". Kirjoita minulle ehdotuksen teksti (noin {n_words} sanaa). Kirjoita vain ehdotus.'
+  - 'Kirjoita noin {n_words} sanan kommentti, jonka asukas voisi julkaista kaupungin osallistumissivustolla aiheesta: "{title}". Palauta vain kommentin teksti.'
+  translate:
+  - 'Käännä seuraava teksti suomeksi ja viimeistele se niin, että se kuulostaa luontevalta. Kyseessä on kirjoitus kaupungin osallistumisalustalle. Palauta vain suomenkielinen teksti.
+
+
+    {text}'
+  - 'Kirjoitin tämän kielellä {src_lang_name}. Käännä se sujuvaksi suomeksi kaupunkini osallistumisalustaa varten ja paranna sanamuotoja. Vastaa vain käännöksellä.
+
+
+    {text}'
+  - 'Muuta seuraava {src_lang_name}-kielinen teksti hyvin kirjoitetuksi suomenkieliseksi kirjoitukseksi kunnan kuulemissivustolle. Kirjoita vain suomenkielinen teksti.
+
+
+    {text}'
+sv:
+  lang_name: Svenska
+  rewrite:
+  - 'Förbättra följande text som jag vill publicera på min stads deltagandeplattform ({platform}). Behåll innebörden, rätta fel och gör texten tydligare. Returnera endast den reviderade texten.
+
+
+    {text}'
+  - 'Skriv om detta förslag/denna kommentar för kommunens deltagandewebbplats så att den är välskriven och övertygande. Behåll mina idéer. Skriv bara den nya texten.
+
+
+    {text}'
+  - 'Redigera texten nedan, som jag ska skicka in till kommunens digitala deltagandeplattform. Rätta grammatik och stil så att den läses bra. Svara endast med texten.
+
+
+    {text}'
+  generate:
+  - 'Skriv ett bidrag (cirka {n_words} ord) till min stads digitala deltagandeplattform ({platform}) om följande ämne: "{title}". Skriv som invånare. Returnera endast texten.'
+  - 'Jag är medborgare och vill lämna in den här idén på min stads plattform för medborgarbudget: "{title}". Skriv förslagstexten åt mig (cirka {n_words} ord). Skriv bara förslaget.'
+  - 'Skriv en kommentar på cirka {n_words} ord som en invånare skulle kunna publicera på stadens deltagandewebbplats om: "{title}". Returnera endast kommentartexten.'
+  translate:
+  - 'Översätt följande text till svenska och finputsa den så att den låter naturlig. Det är ett bidrag till en medborgarplattform. Returnera endast den svenska texten.
+
+
+    {text}'
+  - 'Jag skrev detta på {src_lang_name}. Översätt det till flytande svenska för min stads deltagandeplattform och förbättra formuleringarna. Svara endast med översättningen.
+
+
+    {text}'
+  - 'Gör om följande text på {src_lang_name} till ett välskrivet svenskt bidrag för en kommunal samrådswebbplats. Skriv bara den svenska texten.
+
+
+    {text}'
+  rewrite_consult:
+  - 'Förbättra följande synpunkt som jag vill lämna i ett offentligt samråd om ett regleringsförslag ({platform}). Behåll innebörden, rätta fel och gör texten tydligare. Returnera endast den reviderade texten.
+
+
+    {text}'
+  - 'Skriv om denna kommentar till ett utkast till förordning så att den är välskriven och övertygande. Behåll mina argument. Skriv endast den nya texten.
+
+
+    {text}'
+  - 'Redigera texten nedan, som jag lämnar in som svar på ett officiellt offentligt samråd. Rätta grammatik och stil så att den läses väl. Returnera bara texten.
+
+
+    {text}'
+  generate_consult:
+  - 'Skriv ett svar (cirka {n_words} ord) till ett offentligt samråd ({platform}) om följande initiativ: ”{title}”. Skriv som en berörd medborgare. Returnera endast texten.'
+  - 'Jag vill lämna synpunkter på ett förslag till lag eller förordning om: ”{title}”. Skriv texten åt mig (cirka {n_words} ord) med min ståndpunkt och mina argument. Skriv endast synpunkten.'
+  - 'Skriv en offentlig kommentar på cirka {n_words} ord som en medborgare skulle kunna lämna om ett myndighetsförslag om: ”{title}”. Returnera endast kommentartexten.'
+de:
+  lang_name: Deutsch
+  rewrite:
+  - 'Verbessere den folgenden Text, den ich auf der Beteiligungsplattform meiner Stadt ({platform}) veröffentlichen möchte. Behalte den Sinn bei, korrigiere Fehler und mache ihn klarer. Gib nur den überarbeiteten Text zurück.
+
+
+    {text}'
+  - 'Schreibe diesen Vorschlag/Kommentar für die städtische Beteiligungswebsite so um, dass er gut formuliert und überzeugend ist. Behalte meine Ideen bei. Schreibe nur den neuen Text.
+
+
+    {text}'
+  - 'Bitte überarbeite den folgenden Text, den ich auf der Online-Beteiligungsplattform der Stadtverwaltung einreichen werde. Korrigiere Grammatik und Stil, damit er sich gut liest. Antworte nur mit dem Text.
+
+
+    {text}'
+  generate:
+  - 'Schreibe einen Beitrag (etwa {n_words} Wörter) für die Online-Beteiligungsplattform meiner Stadt ({platform}) zum folgenden Thema: "{title}". Schreibe als Bewohner. Gib nur den Text zurück.'
+  - 'Ich bin Bürger und möchte diese Idee auf der Bürgerhaushalt-Plattform meiner Stadt einreichen: "{title}". Verfasse den Vorschlagstext für mich (etwa {n_words} Wörter). Schreibe nur den Vorschlag.'
+  - 'Verfasse einen Kommentar von etwa {n_words} Wörtern, den ein Bewohner auf der Beteiligungswebsite der Stadt zu folgendem Thema veröffentlichen könnte: "{title}". Gib nur den Kommentartext zurück.'
+  translate:
+  - 'Übersetze den folgenden Text ins Deutsche und überarbeite ihn, damit er natürlich klingt. Es ist ein Beitrag für eine Bürgerbeteiligungsplattform. Gib nur den deutschen Text zurück.
+
+
+    {text}'
+  - 'Ich habe dies auf {src_lang_name} geschrieben. Übersetze es in flüssiges Deutsch für die Beteiligungsplattform meiner Stadt und verbessere die Formulierung. Antworte nur mit der Übersetzung.
+
+
+    {text}'
+  - 'Verwandle den folgenden Text auf {src_lang_name} in einen gut geschriebenen deutschen Beitrag für eine kommunale Konsultationswebsite. Schreibe nur den deutschen Text.
+
+
+    {text}'
+  rewrite_consult:
+  - 'Verbessere den folgenden Beitrag, den ich bei einer öffentlichen Konsultation zu einem Regelungsvorschlag ({platform}) einreichen möchte. Behalte den Sinn bei, korrigiere Fehler und mache ihn klarer. Gib nur den überarbeiteten Text zurück.
+
+
+    {text}'
+  - 'Schreibe diese Stellungnahme zu einem Verordnungsentwurf so um, dass sie gut formuliert und überzeugend ist. Behalte meine Argumente bei. Gib nur den neuen Text aus.
+
+
+    {text}'
+  - 'Bitte überarbeite den folgenden Text, den ich als Antwort auf eine offizielle öffentliche Konsultation einreiche. Korrigiere Grammatik und Stil, damit er sich gut liest. Gib nur den Text aus.
+
+
+    {text}'
+  generate_consult:
+  - 'Schreibe eine Antwort (etwa {n_words} Wörter) auf eine öffentliche Konsultation ({platform}) zu folgender Initiative: „{title}“. Schreibe als betroffener Bürger. Gib nur den Text zurück.'
+  - Ich möchte eine Stellungnahme zu einem Gesetzes- oder Verordnungsvorschlag zum Thema „{title}“ einreichen. Schreibe den Text der Stellungnahme für mich (etwa {n_words} Wörter) mit meiner Position und meinen Argumenten. Gib nur die Stellungnahme aus.
+  - Entwirf einen öffentlichen Kommentar von etwa {n_words} Wörtern, den ein Bürger zu einem Vorschlag der Behörden zum Thema „{title}“ einreichen könnte. Gib nur den Kommentartext zurück.
+  generate_news:
+  - 'Schreibe einen Nachrichtenartikel (etwa {n_words} Wörter), der mit folgendem Vorspann beginnt: "{title}". Gib nur den Artikeltext zurück.'
+  - 'Du bist Journalist. Schreibe eine kurze Nachrichtenmeldung von etwa {n_words} Wörtern zu diesem Ereignis: "{title}". Gib nur die Meldung aus.'
+  - 'Verfasse einen Nachrichtenartikel von etwa {n_words} Wörtern für eine Online-Zeitung zu Folgendem: "{title}". Gib nur den Text zurück.'
+  rewrite_news:
+  - 'Verbessere den folgenden Entwurf eines Nachrichtenartikels. Behalte die Fakten und den Sinn bei, korrigiere Fehler und mache ihn klarer. Gib nur den überarbeiteten Text zurück.
+  
+  
+    {text}'
+  - 'Schreibe diese Nachrichtenmeldung so um, dass sie gut geschrieben ist und wie ein professioneller Artikel wirkt. Behalte alle Informationen. Gib nur den neuen Text aus.
+  
+  
+    {text}'
+  - 'Bitte bearbeite den folgenden Artikel für die Veröffentlichung auf einer Nachrichten-Website. Korrigiere Grammatik und Stil und sorge dafür, dass er sich gut liest. Gib nur den Text aus.
+  
+  
+    {text}'
+pt:
+  lang_name: Português
+  rewrite:
+  - 'Melhore o texto a seguir, que quero publicar na plataforma de participação da minha cidade ({platform}). Mantenha o significado, corrija os erros e deixe-o mais claro. Devolva apenas o texto revisado.
+
+
+    {text}'
+  - 'Reescreva esta proposta/comentário para o site de participação municipal de forma que fique bem escrito e convincente. Preserve as minhas ideias. Escreva apenas o novo texto.
+
+
+    {text}'
+  - 'Por favor, edite o texto abaixo, que vou enviar à plataforma de participação online da prefeitura. Corrija gramática e estilo e faça com que se leia bem. Responda apenas com o texto.
+
+
+    {text}'
+  generate:
+  - 'Escreva uma contribuição (cerca de {n_words} palavras) para a plataforma de participação online da minha cidade ({platform}) sobre o seguinte tema: "{title}". Escreva como morador. Devolva apenas o texto.'
+  - 'Sou cidadão e quero apresentar esta ideia na plataforma de orçamento participativo da minha cidade: "{title}". Escreva o texto da proposta para mim (cerca de {n_words} palavras). Escreva apenas a proposta.'
+  - 'Redija um comentário de cerca de {n_words} palavras que um morador poderia publicar no site de participação da cidade sobre: "{title}". Devolva apenas o texto do comentário.'
+  translate:
+  - 'Traduza o texto a seguir para o português e aperfeiçoe-o para que soe natural. É uma contribuição para uma plataforma de participação cidadã. Devolva apenas o texto em português.
+
+
+    {text}'
+  - 'Escrevi isto em {src_lang_name}. Traduza para um português fluente para a plataforma de participação da minha cidade e melhore a redação. Responda apenas com a tradução.
+
+
+    {text}'
+  - 'Transforme o texto a seguir em {src_lang_name} numa contribuição em português bem escrita para um site de consulta municipal. Escreva apenas o texto em português.
+
+
+    {text}'
+  rewrite_consult:
+  - 'Melhora o seguinte contributo que quero apresentar numa consulta pública sobre uma proposta regulamentar ({platform}). Mantém o sentido, corrige os erros e torna-o mais claro. Devolve apenas o texto revisto.
+
+
+    {text}'
+  - 'Reescreve este comentário sobre um projeto de regulamento para que fique bem escrito e convincente. Mantém os meus argumentos. Escreve apenas o novo texto.
+
+
+    {text}'
+  - 'Corrige o texto abaixo, que apresento como resposta a uma consulta pública oficial. Corrige a gramática e o estilo para que se leia bem. Devolve só o texto.
+
+
+    {text}'
+  generate_consult:
+  - 'Escreve uma resposta (cerca de {n_words} palavras) a uma consulta pública ({platform}) sobre a seguinte iniciativa: "{title}". Escreve como cidadão interessado. Devolve apenas o texto.'
+  - 'Quero apresentar um contributo sobre uma proposta de lei ou de regulamento acerca de: "{title}". Escreve para mim o texto do contributo (cerca de {n_words} palavras), com a minha posição e os meus argumentos. Escreve apenas o contributo.'
+  - 'Redige um comentário público de cerca de {n_words} palavras que um cidadão poderia apresentar sobre uma proposta da administração acerca de: "{title}". Devolve apenas o texto do comentário.'
+  generate_news:
+  - 'Escreva uma notícia (cerca de {n_words} palavras) que comece com a seguinte entrada: "{title}". Devolva apenas o texto da notícia.'
+  - 'É jornalista. Escreva uma breve notícia de cerca de {n_words} palavras sobre este facto: "{title}". Escreva apenas a notícia.'
+  - 'Redija um artigo de imprensa de cerca de {n_words} palavras para um jornal online sobre o seguinte: "{title}". Devolva apenas o texto.'
+  rewrite_news:
+  - 'Melhore o seguinte rascunho de notícia. Mantenha os factos e o significado, corrija os erros e torne-o mais claro. Devolva apenas o texto revisto.
+  
+  
+    {text}'
+  - 'Reescreva esta notícia de modo que fique bem redigida e se leia como um artigo profissional. Mantenha toda a informação. Escreva apenas o texto novo.
+  
+  
+    {text}'
+  - 'Por favor, edite o artigo abaixo para publicação num site de notícias. Corrija a gramática e o estilo e faça com que se leia bem. Responda apenas com o texto.
+  
+  
+    {text}'

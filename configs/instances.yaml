@@ -1,0 +1,48 @@
+# Instance registry: official languages used to filter proposal language columns (platform machine
+# translations into other languages are discarded), country, and display name.
+# 'langs: all' keeps every language column (used only when the export has no translations).
+instances:
+  participa_gencat:                 {name: "participa.gencat.cat", country: ES, langs: [ca, es], kind: regional}
+  barcelona:                        {name: "decidim.barcelona", country: ES, langs: [ca, es], kind: city}
+  espluguesparticipa_diba:          {name: "Esplugues de Llobregat", country: ES, langs: [ca, es], kind: city}
+  decidim_granollers_diba:          {name: "Granollers", country: ES, langs: [ca, es], kind: city}
+  decidim_vic:                      {name: "Vic", country: ES, langs: [ca, es], kind: city}
+  participa311_esparreguera_diba:   {name: "Esparreguera", country: ES, langs: [ca, es], kind: city}
+  encomuparticipa_barcelonaencomu:  {name: "Barcelona en Comú", country: ES, langs: [ca, es], kind: party}
+  omastadi_hel:                     {name: "OmaStadi Helsinki", country: FI, langs: [fi, sv, en], kind: city}
+  asukasbudjetti_turku:             {name: "Turku", country: FI, langs: [fi, sv, en], kind: city}
+  osallistu_tuusula:                {name: "Tuusula", country: FI, langs: [fi], kind: city}
+  participate_nyc:                  {name: "Participate NYC", country: US, langs: [en], kind: city}
+  meta_decidim:                     {name: "Metadecidim", country: INT, langs: [en, es, ca], kind: community}
+  participation_bordeaux_metropole: {name: "Bordeaux Métropole", country: FR, langs: [fr], kind: metro}
+  participation_bordeaux:           {name: "Bordeaux", country: FR, langs: [fr], kind: city}
+  ecrivons_angers:                  {name: "Angers", country: FR, langs: [fr], kind: city}
+  oye_participer_lyon:              {name: "Lyon", country: FR, langs: [fr], kind: city}
+  jeparticipe_toulouse:             {name: "Toulouse", country: FR, langs: [fr], kind: city}
+  participez_nouvelle_aquitaine:    {name: "Nouvelle-Aquitaine", country: FR, langs: [fr], kind: regional}
+  decidonsensemble_tours:           {name: "Tours", country: FR, langs: [fr], kind: city}
+  participez_nanterre:              {name: "Nanterre", country: FR, langs: [fr], kind: city}
+  participationcitoyenne_ccomptes:  {name: "Cour des comptes", country: FR, langs: [fr], kind: national}
+  participons_marseille:            {name: "Marseille", country: FR, langs: [fr], kind: city}
+  participer_lausanne:              {name: "Lausanne", country: CH, langs: [fr], kind: city}
+  participer_ge:                    {name: "Genève", country: CH, langs: [fr], kind: regional}
+  jeparticipe_metropolegrandnancy:  {name: "Grand Nancy", country: FR, langs: [fr], kind: metro}
+  nous_malakoff:                    {name: "Malakoff", country: FR, langs: [fr], kind: city}
+  parlonsensemble_cachan:           {name: "Cachan", country: FR, langs: [fr], kind: city}
+  participons_chambery:             {name: "Chambéry", country: FR, langs: [fr], kind: city}
+  participation_touraine:           {name: "Touraine", country: FR, langs: [fr], kind: regional}
+  jeparticipe_villejuif:            {name: "Villejuif", country: FR, langs: [fr], kind: city}
+  participez_antibes_juanlespins:   {name: "Antibes", country: FR, langs: [fr], kind: city}
+  participer_arcueil:               {name: "Arcueil", country: FR, langs: [fr], kind: city}
+  consultation_quebec:              {name: "Québec", country: CA, langs: [fr, en], kind: regional}
+  partecipa_gov:                    {name: "ParteciPa (Italy)", country: IT, langs: [it], kind: national}
+  partecipazioni_emr:               {name: "Emilia-Romagna", country: IT, langs: [it], kind: regional}
+  partecipazione_regione_puglia:    {name: "Puglia", country: IT, langs: [it], kind: regional}
+  brasilparticipativo_presidencia_gov: {name: "Brasil Participativo", country: BR, langs: [pt], kind: national}
+  eu_hys:                           {name: "EU Have Your Say", country: EU, langs: all, kind: eu-consultation}
+  regulations_gov_epa:              {name: "Regulations.gov (EPA)", country: US, langs: [en], kind: us-rulemaking}
+  regulations_gov_dot:              {name: "Regulations.gov (DOT)", country: US, langs: [en], kind: us-rulemaking}
+  regulations_gov_fda:              {name: "Regulations.gov (FDA)", country: US, langs: [en], kind: us-rulemaking}
+  regulations_gov_usda:             {name: "Regulations.gov (USDA)", country: US, langs: [en], kind: us-rulemaking}
+  regulations_gov_doi:              {name: "Regulations.gov (DOI)", country: US, langs: [en], kind: us-rulemaking}
+  decide_madrid:                    {name: "Decide Madrid", country: ES, langs: [es], kind: city}

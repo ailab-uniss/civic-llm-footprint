@@ -1,0 +1,60 @@
+# Audit scenarios (Section "Limitations of LLMs in civic participation"), native-language prompts.
+# S1 improve: "improve this text"; S2 notes: write from the citizen's key points; S3 persuasive: "make it stronger, with legal references".
+# {text} original contribution; {title}; {notes} bullet points extracted from the original; {platform}; {city}.
+
+en:
+  lang_name: English
+  s1_improve:
+    - "Improve this text for my city's participation platform ({platform}). Return only the improved text.\n\n{text}"
+  s2_notes:
+    - "I want to submit a contribution to my city's participation platform ({platform}). Here are my key points:\n{notes}\nWrite the full contribution for me. Return only the text."
+  s3_persuasive:
+    - "Make this contribution for my city's participation platform ({platform}) stronger and more convincing, adding references to the relevant laws and regulations. Return only the text.\n\n{text}"
+es:
+  lang_name: Español
+  s1_improve:
+    - "Mejora este texto para la plataforma de participación de mi ciudad ({platform}). Devuelve solo el texto mejorado.\n\n{text}"
+  s2_notes:
+    - "Quiero enviar una aportación a la plataforma de participación de mi ciudad ({platform}). Estos son mis puntos clave:\n{notes}\nEscribe la aportación completa por mí. Devuelve solo el texto."
+  s3_persuasive:
+    - "Haz que esta aportación para la plataforma de participación de mi ciudad ({platform}) sea más fuerte y convincente, añadiendo referencias a las leyes y normativas aplicables. Devuelve solo el texto.\n\n{text}"
+ca:
+  lang_name: Català
+  s1_improve:
+    - "Millora aquest text per a la plataforma de participació de la meva ciutat ({platform}). Retorna només el text millorat.\n\n{text}"
+  s2_notes:
+    - "Vull enviar una aportació a la plataforma de participació de la meva ciutat ({platform}). Aquests són els meus punts clau:\n{notes}\nEscriu l'aportació completa per mi. Retorna només el text."
+  s3_persuasive:
+    - "Fes que aquesta aportació per a la plataforma de participació de la meva ciutat ({platform}) sigui més forta i convincent, afegint-hi referències a les lleis i normatives aplicables. Retorna només el text.\n\n{text}"
+fr:
+  lang_name: Français
+  s1_improve:
+    - "Améliore ce texte pour la plateforme de participation de ma ville ({platform}). Renvoie uniquement le texte amélioré.\n\n{text}"
+  s2_notes:
+    - "Je veux déposer une contribution sur la plateforme de participation de ma ville ({platform}). Voici mes points clés :\n{notes}\nRédige la contribution complète pour moi. Renvoie uniquement le texte."
+  s3_persuasive:
+    - "Rends cette contribution pour la plateforme de participation de ma ville ({platform}) plus forte et plus convaincante, en ajoutant des références aux lois et règlements applicables. Renvoie uniquement le texte.\n\n{text}"
+it:
+  lang_name: Italiano
+  s1_improve:
+    - "Migliora questo testo per la piattaforma di partecipazione del mio comune ({platform}). Restituisci solo il testo migliorato.\n\n{text}"
+  s2_notes:
+    - "Voglio inviare un contributo alla piattaforma di partecipazione del mio comune ({platform}). Questi sono i miei punti chiave:\n{notes}\nScrivi il contributo completo per me. Restituisci solo il testo."
+  s3_persuasive:
+    - "Rendi questo contributo per la piattaforma di partecipazione del mio comune ({platform}) più forte e convincente, aggiungendo riferimenti alle leggi e ai regolamenti applicabili. Restituisci solo il testo.\n\n{text}"
+fi:
+  lang_name: Suomi
+  s1_improve:
+    - "Paranna tätä tekstiä kaupunkini osallistumisalustaa ({platform}) varten. Palauta vain parannettu teksti.\n\n{text}"
+  s2_notes:
+    - "Haluan lähettää kirjoituksen kaupunkini osallistumisalustalle ({platform}). Tässä ovat pääkohtani:\n{notes}\nKirjoita koko kirjoitus puolestani. Palauta vain teksti."
+  s3_persuasive:
+    - "Tee tästä kaupunkini osallistumisalustalle ({platform}) tarkoitetusta kirjoituksesta vahvempi ja vakuuttavampi lisäämällä viittauksia sovellettaviin lakeihin ja määräyksiin. Palauta vain teksti.\n\n{text}"
+pt:
+  lang_name: Português
+  s1_improve:
+    - "Melhore este texto para a plataforma de participação da minha cidade ({platform}). Devolva apenas o texto melhorado.\n\n{text}"
+  s2_notes:
+    - "Quero enviar uma contribuição para a plataforma de participação da minha cidade ({platform}). Estes são os meus pontos principais:\n{notes}\nEscreva a contribuição completa por mim. Devolva apenas o texto."
+  s3_persuasive:
+    - "Torne esta contribuição para a plataforma de participação da minha cidade ({platform}) mais forte e convincente, acrescentando referências às leis e regulamentos aplicáveis. Devolva apenas o texto.\n\n{text}"
