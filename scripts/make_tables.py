@@ -3,16 +3,29 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yaml
 
 R, T = Path("results"), Path("paper/tables")
 T.mkdir(parents=True, exist_ok=True)
 LANG = {"ca": "Catalan", "es": "Spanish", "fr": "French", "it": "Italian", "fi": "Finnish", "en": "English", "pt": "Portuguese", "sv": "Swedish", "de": "German"}
+CFG = yaml.safe_load(open("configs/instances.yaml", encoding="utf-8"))["instances"]
+DISPLAY = {k: v["name"] for k, v in CFG.items()}
+DISPLAY.update({"eu_hys_citizens": "HYS citizens", "eu_hys_organisations": "HYS organisations", "eu_hys_unknown": "HYS unknown",
+                "eu_hys": "Have Your Say", "regulations_gov": "Regulations.gov", "regulations_gov_epa": "Regulations.gov EPA",
+                "regulations_gov_dot": "Regulations.gov DOT", "regulations_gov_usda": "Regulations.gov USDA",
+                "regulations_gov_doi": "Regulations.gov DOI"})
 METH = {"distributional": "Distributional (ours)", "pangram+raw": "Open Pangram, raw rate", "pangram+rogan_gladen": "Open Pangram + RG",
         "pangram+bayes": "Open Pangram + Bayes", "binoculars+raw": "Binoculars, raw rate", "binoculars+rogan_gladen": "Binoculars + RG",
         "binoculars+bayes": "Binoculars + Bayes", "fastdetect+raw": "Fast-DetectGPT, raw rate", "fastdetect+rogan_gladen": "Fast-DetectGPT + RG",
         "fastdetect+bayes": "Fast-DetectGPT + Bayes"}
+
+
+def sgn(v, d=1):
+    """Signed number without a negative zero ('-0.0' -> '0.0')."""
+    t = f"{v:+.{d}f}"
+    return t[1:] if float(t) == 0 else t
 
 
 def w(name, lines):
@@ -37,7 +50,7 @@ for tag, m in cfg.items():
     cells = [tag, str(m['family']), str(m['params']), str(m['quant']), ROLE.get(m.get('role'), m.get('role'))]
     L.append(" & ".join(SHORT.get(c, c) for c in cells) + " \\\\")
 L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
-w("tab_models.tex", L)
+# tab_models.tex is written by scripts/make_cls.py (generators with their weight in the reference of the study)
 
 # ---- benchmark table: MAE (pp) per language x method, scenario all, best selection for ours
 if (R / "benchmark.summary.csv").exists():
@@ -53,7 +66,8 @@ if (R / "benchmark.summary.csv").exists():
     Path("results/best_config.txt").write_text(f"{best_sel} {best_lik}\n")
     print("best configuration:", best_sel, best_lik)
     rows = []
-    for meth in ["distributional", "pangram+raw", "pangram+rogan_gladen", "pangram+bayes", "binoculars+rogan_gladen", "fastdetect+rogan_gladen"]:
+    for meth in ["distributional", "pangram+raw", "pangram+rogan_gladen", "pangram+bayes", "binoculars+raw", "binoculars+rogan_gladen",
+                 "binoculars+bayes", "fastdetect+raw", "fastdetect+rogan_gladen", "fastdetect+bayes"]:
         dd = d[(d.method == meth)]
         if meth == "distributional":
             dd = dd[(dd.selection == best_sel) & (dd.likelihood == best_lik)]
@@ -61,7 +75,7 @@ if (R / "benchmark.summary.csv").exists():
             continue
         rows.append((meth, dd.set_index("lang").mae * 100, dd.set_index("lang").coverage * 100))
     langs = sorted(ours.lang.unique())
-    L = [r"\begin{table*}[t]", r"\caption{Benchmark results: mean absolute error of the estimated LLM share (percentage points) over $\alpha\in\{0,\dots,0.5\}$, ten repetitions and all held-out generators, per language and method (all intervention modes). The last column is the empirical coverage of the 95\% intervals for our estimator.}",
+    L = [r"\begin{table*}[t]", r"\caption{Benchmark results: mean absolute error of the estimated LLM share (percentage points) over $\alpha\in\{0,\dots,0.5\}$, ten repetitions and all held-out generators, per language and method (all intervention modes). The last rows give the empirical coverage of the 95\% document-bootstrap intervals of our estimator and of the calibrated intervals that also include the between-generator error variance (leave-one-generator-out).}",
          r"\label{tab:benchmark}", r"\centering\footnotesize", r"\begin{tabular}{l" + "r" * len(langs) + "r}", r"\toprule",
          "Method & " + " & ".join(LANG.get(l, l) for l in langs) + r" & Mean \\", r"\midrule"]
     for meth, mae, cov in rows:
@@ -70,6 +84,9 @@ if (R / "benchmark.summary.csv").exists():
     cov = rows[0][2]
     L.append(r"\midrule")
     L.append("CI coverage (ours), \\% & " + " & ".join(f"{cov.get(l, float('nan')):.0f}" for l in langs) + f" & {cov.reindex(langs).mean():.0f} \\\\")
+    if (R / "calibration_coverage.csv").exists():
+        cc = pd.read_csv(R / "calibration_coverage.csv").groupby("lang").coverage_cal.mean() * 100
+        L.append("CI coverage, calibrated (ours), \\% & " + " & ".join(f"{cc.get(l, float('nan')):.0f}" for l in langs) + f" & {cc.reindex(langs).mean():.0f} \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
     w("tab_benchmark.tex", L)
 
@@ -105,11 +122,11 @@ if (R / "mixed_model.txt").exists():
                     rows.append((parts[0], float(parts[1]), float(parts[2]), float(parts[4])))
                 except ValueError:
                     pass
-    L = [r"\begin{table}[t]", r"\caption{Linear mixed model of the estimated LLM share per instance $\times$ language $\times$ type $\times$ period cell, with instance random intercepts.}",
+    L = [r"\begin{table}[t]", r"\caption{Linear mixed model of the estimated LLM share per instance $\times$ language $\times$ type $\times$ period cell, with instance random intercepts. Coefficients and standard errors in percentage points; reference categories: Catalan and comments.}",
          r"\label{tab:mixed}", r"\centering\footnotesize", r"\begin{tabular}{lrrr}", r"\toprule", r"Term & Coef. & SE & $p$ \\", r"\midrule"]
     for t, c, s, p in rows:
         t = t.replace("C(lang)[T.", "lang=").replace("C(type)[T.", "type=").replace("]", "").replace("_", r"\_")
-        L.append(f"{t} & {100 * c:.2f} & {100 * s:.2f} & {p:.3f} \\\\")
+        L.append(f"{t} & {100 * c:.2f} & {100 * s:.2f} & {'$<$0.001' if p < 0.001 else f'{p:.3f}'} \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     w("tab_mixed.tex", L)
 
@@ -120,21 +137,28 @@ if (R / "audit_metrics.parquet").exists():
     names = {"l1_any_new": "L1 new ref.\\ (\\%)", "l6_any_foreign": "L6 foreign (\\%)", "l2_ents_kept": "L2 ent.\\ kept (\\%)",
              "l2_nums_kept": "L2 num.\\ kept (\\%)", "l4_len_ratio": "L4 len.\\ ratio", "l5_claim_coverage": "L5 coverage (\\%)",
              "l5_output_grounded": "L5 grounded (\\%)"}
-    g = a.groupby("mode")[cols].mean()
+    COMM = ["gpt-5.4-mini", "claude-haiku-5-5", "gemini-3.6-flash"]
+    a["grp"] = a.model.isin(COMM).map({True: "0comm", False: "1open"})
+    a = a[a.grp == "0comm"]   # the table reports the commercial generators; the open-weight ones are summarised in the text
+    g = a.groupby(["grp", "mode"])[cols].mean()
     if (R / "audit_homog.csv").exists():   # L3, set-level metric on the paired design
-        hh = pd.read_csv(R / "audit_homog.csv").groupby("mode")[["dcos_trunc", "d2_orig", "d2_out_trunc"]].mean()
+        hh = pd.read_csv(R / "audit_homog.csv")
+        hh["grp"] = hh.model.isin(COMM).map({True: "0comm", False: "1open"})
+        hh = hh[hh.grp == "0comm"]
+        hh = hh.groupby(["grp", "mode"])[["dcos_trunc", "d2_orig", "d2_out_trunc"]].mean()
         g["l3_dcos"] = hh.dcos_trunc; g["l3_d2"] = hh.d2_out_trunc / hh.d2_orig
         cols = cols + ["l3_dcos", "l3_d2"]
         names.update({"l3_dcos": "L3 $\\Delta$cos", "l3_d2": "L3 dist-2 ratio"})
-    L = [r"\begin{table*}[t]", r"\caption{Audit metrics by scenario, averaged over generators and languages: share of outputs with a new legal reference (L1) or a foreign one (L6), named entities and numbers of the input kept (L2), output/input length ratio (L4), share of input claims covered by the output and of output claims grounded in the input (L5), and homogenisation (L3): mean pairwise cosine similarity among the outputs minus that among their own originals, and distinct-2 ratio of the outputs over that of the originals, both with the outputs truncated to the length of their original. Per-generator values in Fig.~\ref{fig:audit}.}",
+    L = [r"\begin{table*}[t]", r"\caption{Audit metrics by scenario for the three commercial generators, averaged over generators and languages: share of outputs with a new legal reference (L1) or a foreign one (L6), named entities and numbers of the input kept (L2), output/input length ratio (L4), share of input claims covered by the output and of output claims grounded in the input (L5), and homogenisation (L3): mean pairwise cosine similarity among the outputs minus that among their own originals, and distinct-2 ratio of the outputs over that of the originals, both with the outputs truncated to the length of their original. Per-generator values in Fig.~\ref{fig:audit}; the open-weight generators are summarised in Section~\ref{sec:audit_results}.}",
          r"\label{tab:audit}", r"\centering\scriptsize\setlength{\tabcolsep}{4pt}", r"\begin{tabular}{@{}l" + "r" * len(cols) + "@{}}", r"\toprule",
          "Scenario & " + " & ".join(names[c] for c in cols) + r" \\", r"\midrule"]
-    for mode, r in g.iterrows():
+    GRP = {"0comm": f"Commercial generators ({a[a.grp == '0comm'].model.nunique()})", "1open": f"Open-weight generators ({a[a.grp == '1open'].model.nunique()})"}
+    for (grp, mode), r in g.iterrows():
         vals = []
         for c in cols:
             v = r[c]
             if c == "l3_dcos":
-                vals.append(f"{v:+.3f}".replace("-", "$-$"))
+                vals.append("0.000" if abs(v) < 0.0005 else f"{v:+.3f}".replace("-", "$-$"))
             else:
                 vals.append(f"{v:.2f}" if c in ("l4_len_ratio", "l3_d2") else f"{100 * v:.0f}")
         MODE = {"s1_improve": "S1 improve", "s2_notes": "S2 notes", "s3_persuasive": "S3 persuasive"}
@@ -152,15 +176,17 @@ if (R / "null_calibration.csv").exists():
         yr = n[(n.reference == "adapted") & n.slice.str.startswith("year=")].groupby(["instance", "lang"]).alpha.agg(["min", "max"])
         rows = ad.join(po[["alpha"]].rename(columns={"alpha": "alpha_pooled"}), how="left").join(yr, how="left")
         rows = rows.sort_values("n_docs", ascending=False)
-        L = [r"\begin{table}[t]", r"\caption{Null calibration: estimated LLM share (\%) on a held-out half of the pre-ChatGPT texts of each instance, with the instance-adapted reference (Eq.~\eqref{eq:adapt}) and with the unadapted language-level reference, and the range over single pre-ChatGPT years with the adapted reference (years with at least \minDocs{} texts). Values are false-positive floors and topic-drift ranges, not LLM use.}",
+        L = [r"\begin{table}[t]", r"\caption{Null calibration: estimated LLM share (\%) on a held-out half of the pre-ChatGPT texts of each instance, with the instance-adapted reference (Eq.~\eqref{eq:adapt}) and with the unadapted language-level reference, and the range over single pre-ChatGPT years with the adapted reference (years with at least \minDocs{} texts). Values are false-positive floors and topic-drift ranges, not LLM use. $n$: held-out pre-ChatGPT texts (the other half fits the adaptation); --: no pre-ChatGPT year with at least \minDocs{} held-out texts; $^\dagger$: instance with enough pre-ChatGPT texts for the calibration but not enough texts on both sides of the cutoff for the study.}",
              r"\label{tab:null}", r"\centering\scriptsize\setlength{\tabcolsep}{2.5pt}", r"\begin{tabular}{@{}llrrrr@{}}", r"\toprule",
              r"Instance & Lang. & $n$ & Adapted & Unadapted & Years \\", r"\midrule"]
         INAME = {k: v["name"] for k, v in yaml.safe_load(open("configs/instances.yaml", encoding="utf-8"))["instances"].items()}
         INAME.update({"eu_hys_citizens": "HYS citizens", "eu_hys_organisations": "HYS organisations", "eu_hys_unknown": "HYS unknown",
                       "regulations_gov_epa": "Regulations.gov EPA", "regulations_gov_dot": "Regulations.gov DOT",
                       "regulations_gov_usda": "Regulations.gov USDA", "regulations_gov_doi": "Regulations.gov DOI"})
+        study = set(pd.read_csv(R / "processed_stats.csv").instance)
+        in_study = lambda i: i in study or any(i.startswith(x + "_") for x in study)
         for (inst, lang), r in rows.iterrows():
-            name = INAME.get(inst, inst).replace("_", r"\_").replace("&", r"\&")
+            name = INAME.get(inst, inst).replace("_", r"\_").replace("&", r"\&") + ("" if in_study(inst) else r"$^\dagger$")
             yrs = f"{100 * r['min']:.0f}--{100 * r['max']:.0f}" if pd.notna(r.get("max")) else "--"
             L.append(f"{name} & {lang} & {int(r.n_docs):,} & {100 * r.alpha:.1f} & {100 * r.alpha_pooled:.1f} & {yrs} \\\\")
         L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
@@ -181,7 +207,7 @@ if (R / "excess" / "excess.csv").exists():
             r[y] = (x.bound.iloc[0], x.ci_lo.iloc[0], x.ci_hi.iloc[0], x.n_docs.iloc[0]) if len(x) else None
         rows.append(r)
     rows.sort(key=lambda r: r["noise"])
-    L = [r"\begin{table*}[t]", r"\caption{Excess-vocabulary indicator per year (\%, 95\% document-bootstrap interval in brackets), by instance and language. Under the stable-vocabulary counterfactual it is a lower-bound proxy for the share of LLM-processed documents. ``Noise'' is the largest value obtained when a pre-ChatGPT year is treated as post-ChatGPT (number of placebo years in parentheses); values below it are not distinguishable from topic drift. Years with fewer than 300 documents are omitted.}",
+    L = [r"\begin{table*}[t]", r"\caption{Excess-vocabulary indicator per year (\%, 95\% document-bootstrap interval in brackets), by instance and language. Under the stable-vocabulary counterfactual it is a lower-bound proxy for the share of documents written with an LLM. ``Noise'' is the largest value obtained when a pre-ChatGPT year is treated as post-ChatGPT (number of placebo years in parentheses); values below it are not distinguishable from topic drift. Years with fewer than 300 documents are omitted.}",
          r"\label{tab:excess}", r"\centering\scriptsize\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{@{}llr" + "r" * len(yrs) + "@{}}", r"\toprule",
          "Instance & Lang. & Noise & " + " & ".join(str(y) for y in yrs) + r" \\", r"\midrule"]
     for r in rows:
@@ -189,7 +215,7 @@ if (R / "excess" / "excess.csv").exists():
         for y in yrs:
             v = r[y]
             cells.append("--" if v is None else f"{100 * v[0]:.0f} [{100 * v[1]:.0f}, {100 * v[2]:.0f}]")
-        L.append(f"{r['instance'].replace('_', chr(92) + '_')} & {r['lang']} & {100 * r['noise']:.0f} ({r['n_null']}) & " + " & ".join(cells) + r" \\")
+        L.append(f"{DISPLAY.get(r['instance'], r['instance']).replace('_', chr(92) + '_')} & {r['lang']} & {100 * r['noise']:.0f} ({r['n_null']}) & " + " & ".join(cells) + r" \\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
     w("tab_excess.tex", L)
 
@@ -218,7 +244,7 @@ if (R / "multitude" / "benchmark_all.parquet").exists():
         L.append(r"\multicolumn{5}{@{}l}{\emph{" + title + r"}} \\")
         for tag, name in rows:
             if tag in mae.index:
-                L.append(f"{name} & {mae[tag]:.1f} & {bias[tag]:+.1f} & {half[tag]:+.1f} & {neg[tag]}/5 \\\\")
+                L.append(f"{name} & {mae[tag]:.1f} & {sgn(bias[tag])} & {sgn(half[tag])} & {neg[tag]}/5 \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     w("tab_multitude.tex", L)
 
@@ -242,9 +268,9 @@ if (R / "multitude" / "benchmark_all.parquet").exists():
             cells = []
             for a in AL:
                 d = m.loc[(gb, a)] - m.loc[(ga, a)]
-                cells.append(f"{d.mean():+.1f}")
+                cells.append(sgn(d.mean()))
             d10 = m.loc[(gb, 0.10)] - m.loc[(ga, 0.10)]
-            cells.append(f"{d10.min():+.1f} to {d10.max():+.1f}")
+            cells.append(f"{sgn(d10.min())} to {sgn(d10.max())}")
             L.append(f"{name} & " + " & ".join(cells) + r" \\")
     # resampling-only control: same generator, reps 0-4 vs 5-9
     g0 = mb[mb.heldout_model == "mt1_gpt-3.5-turbo"]
@@ -253,9 +279,9 @@ if (R / "multitude" / "benchmark_all.parquet").exists():
         x = g0[g0.alpha == a]
         h1 = x[x.rep < 5].groupby("lang").alpha_hat.mean() * 100; h2 = x[x.rep >= 5].groupby("lang").alpha_hat.mean() * 100
         d = h2 - h1
-        cells.append(f"{d.mean():+.1f}")
+        cells.append(sgn(d.mean()))
         if a == 0.10:
-            r10 = f"{d.min():+.1f} to {d.max():+.1f}"
+            r10 = f"{sgn(d.min())} to {sgn(d.max())}"
     cells.append(r10)
     L.append(r"\midrule"); L.append("No switch (resampling only) & " + " & ".join(cells) + r" \\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
@@ -284,3 +310,88 @@ if (R / "intensity" / "benchmark.parquet").exists():
         L.append(f"{name} & {ov} & " + " & ".join(f"{g[g.alpha == a].ratio.mean():.2f}" for a in AL) + r" \\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     w("tab_intensity.tex", L)
+
+# ---- corpus by source and language (pre/post texts), with the languages that have a reference
+if (R / "processed_stats.csv").exists():
+    st = pd.read_csv(R / "processed_stats.csv")
+    src = lambda i: ("Decide Madrid (CONSUL)" if i == "decide_madrid" else "Have Your Say (EU)" if i.startswith("eu_hys")
+                     else "Regulations.gov (US)" if i.startswith("regulations_gov") else "Decidim instances")
+    st["source"] = st.instance.map(src)
+    t = st.pivot_table(index=["source", "lang"], columns="period", values="n", aggfunc="sum", fill_value=0)
+    gen = pd.read_csv(R / "generation_stats.csv") if (R / "generation_stats.csv").exists() else None
+    ref_langs = set(LANG)
+    order = ["Decidim instances", "Decide Madrid (CONSUL)", "Have Your Say (EU)", "Regulations.gov (US)"]
+    L = [r"\begin{table}[t]", r"\caption{Corpus by source and language: texts retained after pre-processing before (pre) and after (post) 30 November 2022. Languages marked $^\ast$ have no generated reference texts; their texts are counted in the corpus but not estimated.}",
+         r"\label{tab:corpus}", r"\centering\scriptsize\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{@{}llrr@{}}", r"\toprule",
+         r"Source & Language & Pre & Post \\", r"\midrule"]
+    for so in order:
+        if so not in t.index.get_level_values(0):
+            continue
+        first = True
+        for lang, r in t.loc[so].sort_values("pre", ascending=False).iterrows():
+            lab = LANG.get(lang, {"da": "Danish", "nl": "Dutch", "pl": "Polish"}.get(lang, lang)) + ("" if lang in ref_langs else r"$^\ast$")
+            L.append(f"{so if first else ''} & {lab} & {int(r.get('pre', 0)):,} & {int(r.get('post', 0)):,} \\\\")
+            first = False
+    L.append(r"\midrule")
+    L.append(f"Total & & {int(t['pre'].sum()):,} & {int(t['post'].sum()):,} \\\\")
+    L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    w("tab_corpus.tex", L)
+
+# ---- robustness benchmarks (results/robust) and supervised baseline (results/supervised)
+if (R / "robust" / "robust.parquet").exists():
+    rb = pd.read_parquet(R / "robust" / "robust.parquet")
+    rb["err"] = (rb.alpha_hat - rb.alpha) * 100
+    rb["cov"] = (rb.ci_lo <= rb.alpha) & (rb.alpha <= rb.ci_hi)
+    cf = pd.read_csv(R / "calibration_coefs.csv").set_index("lang") if (R / "calibration_coefs.csv").exists() else None
+    if cf is not None:   # calibrated interval with the coefficients fitted on the main benchmark (no refit)
+        c0 = rb.lang.map(cf.c0); c1 = rb.lang.map(cf.c1)
+        hw = (((rb.ci_hi - rb.ci_lo) / 2) ** 2 + 1.96 ** 2 * (c0 + c1 * rb.alpha_hat ** 2).clip(lower=0)) ** 0.5
+        rb["cov_cal"] = ((rb.alpha_hat - hw).clip(lower=0) <= rb.alpha) & (rb.alpha <= (rb.alpha_hat + hw).clip(upper=1))
+    b0 = pd.read_parquet(R / "benchmark.parquet")
+    bs, bl = open(R / "best_config.txt").read().split()
+    b0 = b0[(b0.method == "distributional") & (b0.selection == bs) & (b0.likelihood == bl) & (b0.scenario == "all")].copy()
+    b0["err"] = (b0.alpha_hat - b0.alpha) * 100
+    b0["cov"] = (b0.ci_lo <= b0.alpha) & (b0.alpha <= b0.ci_hi)
+    cc = pd.read_csv(R / "calibration_coverage.csv") if (R / "calibration_coverage.csv").exists() else None
+
+    def row(name, d, cal=True):
+        c = f"{100 * d['cov'].mean():.0f}" if d["cov"].notna().any() and d.ci_lo.notna().any() else "--"
+        k = f"{100 * d['cov_cal'].mean():.0f}" if cal and "cov_cal" in d and d.ci_lo.notna().any() else "--"
+        return f"{name} & {d.err.abs().mean():.1f} & {sgn(d.err.mean())} & {c} & {k} \\\\"
+
+    L = [r"\begin{table}[t]", r"\caption{Robustness of the estimator (all languages, held-out generators unless stated): mean absolute error and mean bias (pp), and coverage (\%) of the 95\% bootstrap intervals and of the calibrated intervals, whose coefficients are fitted on the main benchmark and not re-fitted. Study reference: the three commercial assistants weighted by market share. Composition shift: reference and adaptation fitted on one half of the pre-ChatGPT texts, mixtures built on the other half of one instance; temporal shift: fitted on texts of 2020 and earlier, mixtures of texts of 2021--2022. ``In reference'': the generator of the test texts is one of the reference generators.}",
+         r"\label{tab:robust}", r"\centering\scriptsize\setlength{\tabcolsep}{2.5pt}", r"\begin{tabular}{@{}lrrrr@{}}", r"\toprule",
+         r"Setting & MAE & Bias & Cov. & Cal. \\", r"\midrule"]
+    b0["cov_cal"] = np.nan
+    L.append(f"Main benchmark (equal weights, $n{{=}}1000$) & {b0.err.abs().mean():.1f} & {sgn(b0.err.mean())} & {100 * b0['cov'].mean():.0f} & "
+             + (f"{100 * cc.coverage_cal.mean():.0f}" if cc is not None else "--") + r" \\")
+    for setting, name in [("n1000", r"Study reference, $n{=}1000$")]:
+        d = rb[(rb.exp == "weighted") & (rb.setting == setting)]
+        if len(d): L.append(row(name, d))
+    for setting, name in [("n300", r"Study reference, $n{=}300$"), ("n150", r"Study reference, $n{=}150$")]:
+        d = rb[(rb.exp == "smalln") & (rb.setting == setting)]
+        if len(d): L.append(row(name, d))
+    for exp, title in [("instance", "Composition shift"), ("period", "Temporal shift")]:
+        for setting, name in [("adapted|out", "adapted, held out"), ("adapted|in", "adapted, in reference"),
+                              ("unadapted|out", "not adapted, held out"), ("unadapted|in", "not adapted, in reference")]:
+            d = rb[(rb.exp == exp) & (rb.setting == setting)]
+            if len(d): L.append(row(f"{title}, {name}", d))
+    for exp, title in [("modeout", "Mode not in reference"), ("variantout", "Prompt variant not in reference")]:
+        d = rb[rb.exp == exp]
+        if len(d):
+            L.append(f"{title} & {d.err.abs().mean():.1f} & {sgn(d.err.mean())} & -- & -- \\\\")
+            if exp == "modeout":
+                for v in sorted(d.setting.unique()):
+                    x = d[d.setting == v]
+                    L.append(f"\quad {v.split('=')[1]} & {x.err.abs().mean():.1f} & {sgn(x.err.mean())} & -- & -- \\\\")
+    if (R / "supervised" / "supervised.parquet").exists():
+        sv = pd.read_parquet(R / "supervised" / "supervised.parquet")
+        sv["err"] = (sv.alpha_hat - sv.alpha) * 100
+        L.append(r"\midrule")
+        L.append(r"\multicolumn{5}{@{}l}{\emph{Supervised baseline: fine-tuned XLM-R large, same protocol as the main benchmark}} \\")
+        QN = {"xlmr+cc": "Classify \& count", "xlmr+pcc": "Probabilistic CC", "xlmr+acc": "Adjusted CC", "xlmr+pacc": "Probabilistic ACC", "xlmr+sld": "EM (SLD)"}
+        for mth in ["xlmr+cc", "xlmr+acc", "xlmr+pcc", "xlmr+pacc", "xlmr+sld"]:
+            x = sv[sv.method == mth]
+            if len(x): L.append(f"{QN[mth]} & {x.err.abs().mean():.1f} & {sgn(x.err.mean())} & -- & -- \\\\")
+    L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    w("tab_robust.tex", L)

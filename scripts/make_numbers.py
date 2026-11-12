@@ -15,6 +15,15 @@ import sys
 import yaml
 
 
+def wilson(k, n, z=1.96):
+    """95% Wilson score interval for a proportion, in percent (rounded)."""
+    if n == 0:
+        return 0, 0
+    p = k / n; d = 1 + z * z / n; c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return round(100 * max(0, c - h)), round(100 * min(1, c + h))
+
+
 def macro(name: str, value) -> str:
     return f"\\newcommand{{\\{name}}}{{{value}}}\n"
 
@@ -175,8 +184,11 @@ def main():
         nums["mtOldOpenBiasMin"] = f"{bias[old_open].min():.1f}"; nums["mtOldOpenBiasMax"] = f"{bias[old_open].max():.1f}"
         nums["mtOldOpenN"] = len(old_open); nums["mtOursN"] = len(ours)
         nums["mtFloor"] = f"{mb[mb.alpha <= 0.025].err.mean():.1f}"
-        nums["mtLangs"] = int(mb.lang.nunique()); nums["mtHeldout"] = int(mb.heldout_model.nunique())
-        nums["mtGptFourRank"] = int((mae < mae["mt1_gpt-4"]).sum() + 1) if "mt1_gpt-4" in mae.index else 0
+        # count and rank only over the held-out generators listed in Table tab:multitude (make_tables GROUPS)
+        hidden = {"mt1_opt-iml-max-1.3b", "mt_opt-iml-max-30b", "mt_vicuna-13b"}
+        shown = mae[[m for m in mae.index if m not in hidden]]
+        nums["mtLangs"] = int(mb.lang.nunique()); nums["mtHeldout"] = int(len(shown))
+        nums["mtGptFourRank"] = int((shown < shown["mt1_gpt-4"]).sum() + 1) if "mt1_gpt-4" in shown.index else 0
         # generator switch at constant share: spurious shift (same reference, same human pool)
         mm = mb.groupby(["heldout_model", "alpha", "lang"]).alpha_hat.mean().unstack("lang") * 100
         SW = {"ThreeToFour": ("mt1_gpt-3.5-turbo", "mt1_gpt-4"), "ThreeToThreeNew": ("mt1_gpt-3.5-turbo", "mt_gpt-3.5-turbo-0125"),
@@ -227,6 +239,13 @@ def main():
             nums[f"hpDtwoOut{k}"] = f"{g.d2_out_trunc.mean():.2f}"; nums[f"hpDtwoFull{k}"] = f"{g.d2_out_full.mean():.2f}"
             nums[f"hpLen{k}"] = f"{g.len_ratio.mean():.1f}"
         nums["hpDtwoOrig"] = f"{H.d2_orig.mean():.2f}"
+        Hc = H[H.model.isin(["gpt-5.4-mini", "claude-haiku-5-5", "gemini-3.6-flash"])]
+        for mode, k in [("s1_improve", "SOne"), ("s2_notes", "STwo"), ("s3_persuasive", "SThree")]:
+            g = Hc[Hc["mode"] == mode]
+            if len(g):
+                nums[f"hpCTrunc{k}"] = "0.000" if abs(g.dcos_trunc.mean()) < 0.0005 else f"{g.dcos_trunc.mean():+.3f}"; nums[f"hpCFull{k}"] = f"{g.dcos_full.mean():+.3f}"
+                nums[f"hpCDtwoOut{k}"] = f"{g.d2_out_trunc.mean():.2f}"
+        nums["hpCDtwoOrig"] = f"{Hc.d2_orig.mean():.2f}"
         for _k in [k for k in nums if k.startswith("hp")]:
             nums[_k] = str(nums[_k]).replace("-", "$-$")
     # ---- manual check of L1 / L5 (co-author annotation, results/manual_check/audit_check.xlsx)
@@ -261,6 +280,17 @@ def main():
         nums["manJurisdictionBad"] = int((norm(real[a4]) == "n").sum())
         exist = real[ex == "y"]; pert = norm(exist[a5]); pert = pert[pert.isin(["pertinent", "not pertinent", "uncertain"])]
         nums["manNotPertinent"] = f"{100 * (pert == 'not pertinent').mean():.0f}"; nums["nManPertJudged"] = int(len(pert))
+        nums["manNotExistLo"], nums["manNotExistHi"] = wilson(int((ex == 'n').sum()), len(ex))
+        nums["manNotPertinentLo"], nums["manNotPertinentHi"] = wilson(int((pert == 'not pertinent').sum()), len(pert))
+        for grp, sel in [("Comm", real.generator.isin(["gpt-5.4-mini", "claude-haiku-5-5"])), ("Open", ~real.generator.isin(["gpt-5.4-mini", "claude-haiku-5-5"]))]:
+            rg = real[sel]; eg = norm(rg[a3]); xg = rg[eg == "y"]; pg = norm(xg[a5])
+            nums[f"nManReal{grp}"] = int(len(rg)); nums[f"manNotExist{grp}N"] = int((eg == "n").sum())
+            nums[f"manNotExist{grp}"] = f"{100 * (eg == 'n').mean():.0f}"
+            nums[f"manNotExist{grp}Lo"], nums[f"manNotExist{grp}Hi"] = wilson(int((eg == "n").sum()), len(eg))
+            nums[f"nManExist{grp}"] = int(len(xg))
+            for v, k in [("pertinent", "Pert"), ("not pertinent", "NotPert"), ("uncertain", "Uncert")]:
+                nums[f"man{k}{grp}N"] = int((pg == v).sum()); nums[f"man{k}{grp}"] = f"{100 * (pg == v).mean():.0f}"
+            nums[f"manNotPert{grp}Lo"], nums[f"manNotPert{grp}Hi"] = wilson(int((pg == "not pertinent").sum()), len(pg))
         missed = pairs[col(pairs, "A_refs_missed")].fillna("").astype(str).str.strip() != ""
         nums["manMissedPairs"] = int(missed.sum())
         neg = pairs.L1_any_new_automatic == 0
@@ -360,6 +390,20 @@ def main():
             nums[f"audit{key}MinModel"], nums[f"audit{key}Min"] = mname(col.index[0]), fmt(col.iloc[0])
             nums[f"audit{key}MaxModel"], nums[f"audit{key}Max"] = mname(col.index[-1]), fmt(col.iloc[-1])
         nums["nAuditPairs"] = fmt_int(len(au))
+        COMM = ["gpt-5.4-mini", "claude-haiku-5-5", "gemini-3.6-flash"]
+        au["grp"] = np.where(au.model.isin(COMM), "C", "O")
+        nums["nAuditModelsComm"] = int(au[au.grp == "C"].model.nunique()); nums["nAuditModelsOpen"] = int(au[au.grp == "O"].model.nunique())
+        nums["nAuditPairsComm"] = fmt_int(int((au.grp == "C").sum()))
+        for (grp, mode), r in au.groupby(["grp", "mode"])[list(MET)].mean().iterrows():
+            for c, (name, scale) in MET.items():
+                v = r[c] * scale
+                nums[f"audit{grp}{name}{MODE[mode]}"] = f"{v:.0f}" if scale == 100 else f"{v:.1f}"
+        gc = au[au.grp == "C"].groupby(["mode", "model"])[["l1_any_new", "l4_len_ratio"]].mean()
+        for mode, c, key, scale in [("s3_persuasive", "l1_any_new", "CLOneNewSThree", 100), ("s3_persuasive", "l4_len_ratio", "CLFourLenSThree", 1)]:
+            col = gc.loc[mode][c].sort_values()
+            fmt = (lambda v: f"{scale * v:.0f}") if scale == 100 else (lambda v: f"{v:.1f}")
+            nums[f"audit{key}MinModel"], nums[f"audit{key}Min"] = mname(col.index[0]), fmt(col.iloc[0])
+            nums[f"audit{key}MaxModel"], nums[f"audit{key}Max"] = mname(col.index[-1]), fmt(col.iloc[-1])
         if Path("data/audit/audit_sample.parquet").exists():
             asmp = pd.read_parquet("data/audit/audit_sample.parquet", columns=["lang"])
             nums["nAuditSeeds"] = int(asmp.groupby("lang").size().max())
@@ -371,6 +415,12 @@ def main():
         agg = c.groupby("period").apply(lambda g: (g.alpha * g.n_docs).sum() / g.n_docs.sum())
         nums["alphaPreAll"] = f"{100 * agg.get('pre', float('nan')):.1f}"
         nums["alphaPostAll"] = f"{100 * agg.get('post', float('nan')):.1f}"
+        srcf = lambda i: 'Madrid' if i == 'decide_madrid' else 'Hys' if i.startswith('eu_hys') else 'Regs' if i.startswith('regulations') else 'Decidim'
+        c['src'] = c.instance.map(srcf)
+        bys = c.groupby(['src', 'period']).apply(lambda g: (g.alpha * g.n_docs).sum() / g.n_docs.sum())
+        for (so, per), v in bys.items():
+            nums[f"alpha{per.capitalize()}Src{so}"] = f"{100 * v:.1f}"
+        nums['alphaPostShareHys'] = f"{100 * c[(c.period == 'post') & (c.src == 'Hys')].n_docs.sum() / c[c.period == 'post'].n_docs.sum():.0f}"
         post = c[c.period == "post"]
         if len(post):
             top = post.sort_values("alpha").iloc[-1]
@@ -468,6 +518,9 @@ def main():
                     nums[f"excess{key}{yw(r.year)}Lo"] = pct(r.ci_lo); nums[f"excess{key}{yw(r.year)}Hi"] = pct(r.ci_hi)
         nul = e[e.kind == "placebo"].groupby(["instance", "lang"]).bound.max()
         nums["excessUsable"] = int((nul <= 0.10).sum()); nums["excessInstances"] = int(len(nul))
+        portal = nul[[i.startswith(("eu_hys", "regulations_gov")) for i in nul.index.get_level_values(0)]]
+        if len(portal):
+            nums["excessNoisePortalMin"] = pct(portal.min()); nums["excessNoisePortalMax"] = pct(portal.max())
 
     # ---- campaigns and homogenisation
     if (R / "alpha_campaign.csv").exists():
@@ -509,6 +562,113 @@ def main():
             for col, key in [("mean_words", "Words"), ("distinct2", "Distinct"), ("mean_cos", "Cos")]:
                 d = pv[(col, "post")] - pv[(col, "pre")]
                 nums[f"homCorr{key}"] = f"{np.corrcoef(da, d)[0, 1]:.2f}"
+    # ---- consumer chat applications (results/consumer_check): runs.xlsx (answers pasted from the apps),
+    # references_all.csv (new references extracted by the L1 regex), references_verified.csv (checked sample)
+    C = R / "consumer_check"
+    if (C / "runs.xlsx").exists() and (C / "references_all.csv").exists():
+        runs = pd.read_excel(C / "runs.xlsx", sheet_name="runs")
+        runs = runs[runs.C3_answer_text.notna()]
+        refs = pd.read_csv(C / "references_all.csv")
+        per_run = refs.groupby(["pair_id", "app"]).size()
+        scol = [c for c in runs.columns if c.startswith("C2_")][0]
+        nums["nConsumerOrig"] = int(runs.pair_id.nunique())
+        for app, key in [("ChatGPT", "Gpt"), ("Gemini", "Gem")]:
+            g = runs[runs.app == app]
+            k = pd.Series([per_run.get((p, app), 0) for p in g.pair_id])
+            nums[f"cons{key}N"] = int(len(g))
+            nums[f"cons{key}Searched"] = int(g[scol].astype(str).str.strip().str.upper().eq("Y").sum())
+            nums[f"cons{key}Refs"] = f"{k.mean():.1f}"
+            nums[f"cons{key}AnyRef"] = f"{100 * (k > 0).mean():.0f}"
+            nums[f"cons{key}Words"] = fmt_int(round(g.C3_answer_text.astype(str).str.split().str.len().mean()))
+        if (C / "references_verified.csv").exists():
+            v = pd.read_csv(C / "references_verified.csv")
+            v = v[(v.A1_present == "Y") & (v.A2_identifiable == "Y")]
+            nums["nConsVerified"] = int(len(v))
+            for app, key in [("ChatGPT", "Gpt"), ("Gemini", "Gem")]:
+                g = v[v.app == app]
+                nums[f"cons{key}Checked"] = int(len(g))
+                nums[f"cons{key}NotExist"] = int((g.A3_exists == "N").sum())
+                e = g[g.A3_exists == "Y"]  # pertinence over existing references, as for the API conditions
+                nums[f"cons{key}Pert"] = f"{100 * (e.A5_pertinent == 'pertinent').mean():.0f}"
+                nums[f"cons{key}NotPert"] = f"{100 * (e.A5_pertinent == 'not pertinent').mean():.0f}"
+                nums[f"cons{key}Uncert"] = f"{100 * (e.A5_pertinent == 'uncertain').mean():.0f}"
+                nums[f"cons{key}PertLo"], nums[f"cons{key}PertHi"] = wilson(int((e.A5_pertinent == 'pertinent').sum()), len(e))
+        if (C / "spotcheck_human.xlsx").exists():
+            s = pd.read_excel(C / "spotcheck_human.xlsx")
+            nums["nConsSpot"] = int(len(s))
+            nums["nConsSpotFlagged"] = int(((s.LLM_A5_pertinent != "pertinent") | (s.LLM_A3_exists != "Y")).sum())
+            nums["consSpotAgreeExist"] = int((s.LLM_A3_exists == s.HUMAN_A3_exists).sum())
+            b = s[s.HUMAN_A5_pertinent.notna() & (s.HUMAN_A3_exists == "Y")]
+            nums["nConsSpotPert"] = int(len(b))
+            nums["consSpotAgreePert"] = int((b.LLM_A5_pertinent == b.HUMAN_A5_pertinent).sum())
+    # ---- reference sensitivity: equal-weight reference of all generators and single-generator references
+    if (R / "analysis_equal" / "alpha_cells_period.csv").exists():
+        c0 = pd.read_csv(R / "alpha_cells_period.csv"); ce = pd.read_csv(R / "analysis_equal" / "alpha_cells_period.csv")
+        wa = lambda c, per: (c[c.period == per].alpha * c[c.period == per].n_docs).sum() / c[c.period == per].n_docs.sum()
+        nums["eqPostAll"] = f"{100 * wa(ce, 'post'):.1f}"; nums["eqPreAll"] = f"{100 * wa(ce, 'pre'):.1f}"
+        mm = c0.merge(ce, on=["instance", "lang", "type", "period"], suffixes=("", "_eq"))
+        nums["eqCorr"] = f"{np.corrcoef(mm.alpha, mm.alpha_eq)[0, 1]:.2f}"
+        pp = mm.pivot_table(index=["instance", "lang", "type"], columns="period", values=["alpha", "alpha_eq"]).dropna()
+        d1 = pp[("alpha", "post")] - pp[("alpha", "pre")]; d2 = pp[("alpha_eq", "post")] - pp[("alpha_eq", "pre")]
+        big = (d1.abs() > 0.02) | (d2.abs() > 0.02)
+        nums["eqBigChanges"] = int(big.sum()); nums["eqBigAgree"] = int(((d1 * d2) > 0)[big].sum())
+    if (R / "alpha_single_generator.csv").exists():
+        sg = pd.read_csv(R / "alpha_single_generator.csv")
+        po = sg[sg.period == "post"].groupby("model").apply(lambda g: (g.alpha * g.n_docs).sum() / g.n_docs.sum())
+        nums["sgPostMin"] = f"{100 * po.min():.1f}"; nums["sgPostMax"] = f"{100 * po.max():.1f}"
+    if (R / "calibration_coverage.csv").exists():
+        cc = pd.read_csv(R / "calibration_coverage.csv"); cf = pd.read_csv(R / "calibration_coefs.csv")
+        nums["calCov"] = f"{100 * cc.coverage_cal.mean():.0f}"; nums["calCovMin"] = f"{100 * cc.groupby('lang').coverage_cal.mean().min():.0f}"
+        nums["calCovMax"] = f"{100 * cc.groupby('lang').coverage_cal.mean().max():.0f}"
+        nums["calHw"] = f"{100 * cc.hw_cal.mean():.1f}"; nums["calHwBoot"] = f"{100 * cc.hw_boot.mean():.1f}"
+        nums["calAddMin"] = f"{100 * cf.added_hw_at_20.min():.0f}"; nums["calAddMax"] = f"{100 * cf.added_hw_at_20.max():.0f}"
+    if (R / "generator_bounds.csv").exists():
+        gb = pd.read_csv(R / "generator_bounds.csv").set_index(["series", "year"])
+        for (se, k) in [("Madrid", "Madrid"), ("All instances (pooled)", "Pool")]:
+            for yr, yk in [(2023, "TwentyThree"), (2024, "TwentyFour"), (2025, "TwentyFive"), (2026, "TwentySix")]:
+                if (se, yr) in gb.index:
+                    r = gb.loc[(se, yr)]
+                    nums[f"gb{k}{yk}"] = f"{100 * r.alpha_hat:.1f}"; nums[f"gb{k}{yk}Lo"] = f"{100 * r.lo:.1f}"; nums[f"gb{k}{yk}Hi"] = f"{100 * r.hi:.1f}"
+        mbb = pd.read_parquet(R / "multitude" / "benchmark_all.parquet")
+        mbb = mbb[(mbb.method == "distributional") & (mbb.selection == "ratio") & (mbb.likelihood == "length") & (mbb.scenario == "generate") & (mbb.alpha > 0)]
+        ff = (mbb.groupby(["heldout_model", "alpha"]).alpha_hat.mean() / mbb.groupby(["heldout_model", "alpha"]).alpha.mean()).unstack()
+        cols = [c for c in ff.columns if 0.1 <= c <= 0.3]
+        rel = (ff.loc[["mt1_gpt-3.5-turbo", "mt1_gpt-4", "mt_gpt-3.5-turbo-0125", "gpt-4o-mini"], cols].div(ff.loc["gpt-5.4-mini", cols])).mean(axis=1)
+        nums["gbRelMin"] = f"{rel.min():.2f}"; nums["gbRelMax"] = f"{rel.max():.2f}"
+    # ---- robustness of the cell models (scripts/mixed_robust.py)
+    if (R / "mixed_robust.csv").exists():
+        mr = pd.read_csv(R / "mixed_robust.csv")
+        def g(model, term):
+            x = mr[mr.model.str.startswith(model) & (mr.term == term)].iloc[0]; return x
+        x = g("A period cells, WLS", "post"); nums["mixWPost"] = f"{100*x.coef:.1f}"; nums["mixWPostLo"] = f"{100*x.lo:.1f}"; nums["mixWPostHi"] = f"{100*x.hi:.1f}"
+        x = g("B half-year ramp, mixed", "post"); nums["rampLevel"] = f"{100*x.coef:.1f}".replace('-', '$-$'); nums["rampLevelLo"] = f"{100*x.lo:.1f}".replace('-', '$-$'); nums["rampLevelHi"] = f"{100*x.hi:.1f}"
+        x = g("B half-year ramp, mixed", "ramp"); nums["rampSlope"] = f"{100*x.coef:.1f}"; nums["rampSlopeLo"] = f"{100*x.lo:.1f}"; nums["rampSlopeHi"] = f"{100*x.hi:.1f}"
+        x = g("B half-year ramp, WLS", "ramp"); nums["rampWSlope"] = f"{100*x.coef:.1f}"
+        x = g("B half-year ramp, WLS", "post"); nums["rampWLevel"] = f"{100*x.coef:.1f}".replace('-', '$-$'); nums["rampWLevelP"] = f"{x.p:.2f}"
+    if (R / "its_hac.csv").exists():
+        ih = pd.read_csv(R / "its_hac.csv")
+        nums["itsHacPairs"] = int(len(ih)); nums["itsHacLevelSig"] = int((ih.p_level < 0.05).sum()); nums["itsHacSlopeSig"] = int((ih.p_slope < 0.05).sum())
+        nums["itsHacLevelPos"] = int(((ih.p_level < 0.05) & (ih.level > 0)).sum())
+    # ---- mixed-effects models of the audit metrics (scripts/audit_mixed.py)
+    if (R / "audit_mixed.csv").exists():
+        am = pd.read_csv(R / "audit_mixed.csv")
+        sc = am[am.term.str.contains("vs s1")]
+        nums["amTests"] = int(len(sc)); nums["amSig"] = int((sc.p_bh < 0.05).sum())
+        lg = am[am.term.str.startswith("language")]
+        nums["amLangSig"] = int((lg.p_bh < 0.05).sum()); nums["amLangTests"] = int(len(lg))
+        x = am[(am.metric == "l6_any_foreign") & (am.term == "s3_persuasive vs s1")].iloc[0]
+        nums["amLSixCoef"] = f"{100 * x.coef:.1f}"
+        x = am[(am.metric == "l7_wrong_lang") & (am.term == "s2_notes vs s1")].iloc[0]
+        nums["amLSevenCoef"] = f"{100 * abs(x.coef):.1f}"
+    # ---- L7: outputs not in the requested language (scripts/audit_l7.py)
+    if (R / "audit_l7.csv").exists():
+        l7 = pd.read_csv(R / "audit_l7.csv")
+        nums["auditLSeven"] = f"{100 * l7.l7_wrong_lang.mean():.1f}"
+        bm = l7.groupby("model").l7_wrong_lang.mean()
+        nums["auditLSevenMax"] = f"{100 * bm.max():.1f}"; nums["auditLSevenMaxModel"] = models.get(bm.idxmax(), bm.idxmax()) if 'models' in dir() else bm.idxmax()
+        w = l7[l7.l7_wrong_lang == 1]
+        nums["auditLSevenEsCa"] = int(((w.lang == 'es') & (w.lang_out == 'ca')).sum()); nums["auditLSevenEnFr"] = int(((w.lang == 'en') & (w.lang_out == 'fr')).sum())
+        nums["auditLSevenN"] = int(len(w))
     if Path("configs/reference_weights.yaml").exists():
         w = yaml.safe_load(open("configs/reference_weights.yaml", encoding="utf-8"))["weights"]
         for tag, key in [("gpt", "wChatGPT"), ("gemini", "wGemini"), ("claude", "wClaude")]:

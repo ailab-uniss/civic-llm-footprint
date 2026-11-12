@@ -126,6 +126,18 @@ class References:
         return self.inst.get((inst, lang), self.base.get(lang))
 
 
+
+def attach_scores(H, G, path):
+    """Keep the documents with a cross-fitted classifier score (study_scores.py) and add the 'score' column."""
+    Sc = pd.read_parquet(path)
+    h = Sc[Sc.set == "civic_h"][["doc_id", "score"]].drop_duplicates("doc_id")
+    key = ["doc_id", "model", "mode", "variant"]   # a seed has several generated texts per generator
+    g = Sc[Sc.set == "civic_g"][key + ["score"]].copy()
+    g["variant"] = pd.to_numeric(g.variant, errors="coerce").fillna(-1).astype(int)
+    G = G.assign(variant=pd.to_numeric(G.variant, errors="coerce").fillna(-1).astype(int))
+    return H.merge(h, on="doc_id", how="inner"), G.merge(g.drop_duplicates(key), on=key, how="inner")
+
+
 def estimate_cells(df: pd.DataFrame, refs: References, min_docs: int, n_boot: int, group_cols: list[str]) -> pd.DataFrame:
     rows = []
     for key, g in df.groupby(group_cols):
@@ -133,12 +145,14 @@ def estimate_cells(df: pd.DataFrame, refs: References, min_docs: int, n_boot: in
         est = refs.get(key.get("instance"), key.get("lang"))
         if est is None or len(g) < min_docs:
             continue
-        r = est.estimate(to_sets(g.tokens), n_boot=n_boot)
+        r = est.estimate(g.score.values if getattr(est, "uses_scores", False) else to_sets(g.tokens), n_boot=n_boot)
         rows.append({**key, "n_docs": len(g), "alpha": r["alpha"], "ci_lo": r.get("ci_lo"), "ci_hi": r.get("ci_hi"),
+                     **{k: r[k] for k in ("lb", "lb_lo", "alpha_gmin", "alpha_gmax", "gmax_hi") if k in r},
                      "pooled_ref": (key.get("instance"), key.get("lang")) in refs.pooled,
                      "mean_words": g.n_words.mean(), "median_words": g.n_words.median(),
                      "n_authors": g.author_hash[g.author_hash != ""].nunique() if "author_hash" in g else np.nan,
-                     "campaign_share": g.is_campaign.mean() if "is_campaign" in g else np.nan})
+                     "campaign_share": g.is_campaign.mean() if "is_campaign" in g else np.nan,
+                     "template_share": g.is_template.mean() if "is_template" in g else np.nan})
     return pd.DataFrame(rows)
 
 
@@ -274,6 +288,8 @@ def main():
     ap.add_argument("--weights", default="", help="YAML {generator: weight}: market-share-weighted P_M restricted to these generators "
                                                  "(default: equal-weight mixture of all generators)")
     ap.add_argument("--exclude-models", nargs="*", default=[], help="generators left out of the reference (e.g. legacy models kept for the benchmark only)")
+    ap.add_argument("--scores", default="", help="cross-fitted classifier scores (study_scores.py): HDy estimator calibrated per instance")
+    ap.add_argument("--templates", default="", help="templated-campaign flags (templates.py): estimates also without them")
     a = ap.parse_args()
     if a.weights:
         import yaml
@@ -294,6 +310,10 @@ def main():
         C = pd.read_parquet(a.campaigns)[["doc_id", "is_campaign", "cluster_id"]].drop_duplicates("doc_id")
         H = H.merge(C, on="doc_id", how="left")
         H["is_campaign"] = H["is_campaign"].fillna(False)
+    if a.templates:
+        T = pd.read_parquet(a.templates)[["doc_id", "is_template"]].drop_duplicates("doc_id")
+        H = H.merge(T, on="doc_id", how="left")
+        H["is_template"] = H["is_template"].fillna(False).astype(bool)
     G = pd.read_parquet(a.gen)
     if a.exclude_models:
         G = G[~G.model.isin(a.exclude_models)]
@@ -302,7 +322,12 @@ def main():
     S = pd.read_parquet(a.sample, columns=["doc_id", "lang", "instance"])
     S["instance"] = S.doc_id.map(seed_inst).fillna(S.instance)
 
-    refs = References(H, G, S, a)
+    if a.scores:
+        from score_estimator import ScoreReferences
+        H, G = attach_scores(H, G, a.scores)
+        refs = ScoreReferences(H, G, a.weights, a.min_ref)
+    else:
+        refs = References(H, G, S, a)
     print("languages with references:", list(refs.base), "| pooled instance-language pairs:", len(refs.pooled), flush=True)
     D = H.copy()
     D["half"] = half_year(D.created_at)
@@ -326,6 +351,12 @@ def main():
     ly["alpha"], ly["ci_lo"], ly["ci_hi"] = ly.wa / ly.n_docs, ly.wlo / ly.n_docs, ly.whi / ly.n_docs
     ly.drop(columns=["wa", "wlo", "whi"]).to_csv(out / "alpha_lang_year.csv", index=False)
 
+    if "is_template" in D:   # the same cells without the letters assembled from a shared pool of sentences
+        N = D[~D.is_template]
+        estimate_cells(N, refs, a.min_docs, a.n_boot, ["instance", "lang", "half"]).to_csv(out / "alpha_cells_half_notemplate.csv", index=False)
+        estimate_cells(N, refs, a.min_docs, a.n_boot, ["instance", "lang", "year"]).to_csv(out / "alpha_cells_instance_year_notemplate.csv", index=False)
+        estimate_cells(N, refs, a.min_docs, a.n_boot, ["instance", "lang", "type", "period"]).to_csv(out / "alpha_cells_period_notemplate.csv", index=False)
+        estimate_cells(D[D.post == 1], refs, a.min_docs, a.n_boot, ["instance", "lang", "is_template"]).to_csv(out / "alpha_template.csv", index=False)
     if "is_campaign" in D:
         cells_camp = estimate_cells(D[D.post == 1], refs, a.min_docs, a.n_boot, ["instance", "lang", "is_campaign"])
         cells_camp.to_csv(out / "alpha_campaign.csv", index=False)
@@ -342,7 +373,11 @@ def main():
     emb = pd.read_parquet(a.emb) if a.emb else None
     homogenisation(D, emb, ["instance", "lang", "period"]).to_csv(out / "homogenisation.csv", index=False)
 
-    null_calibration(H, G, S, a).to_csv(out / "null_calibration.csv", index=False)
+    if a.scores:
+        from score_estimator import null_calibration_scores
+        null_calibration_scores(H, G, a.weights, a.min_docs, a.min_ref).to_csv(out / "null_calibration.csv", index=False)
+    else:
+        null_calibration(H, G, S, a).to_csv(out / "null_calibration.csv", index=False)
 
     # robustness: single-generator references (adapted) on pre/post cells
     rows = []
@@ -350,11 +385,12 @@ def main():
         e = refs.get(inst, lang)
         if e is None:
             continue
-        for m in sorted(e.ref.per_model_p_m):
+        sc = getattr(e, "uses_scores", False)
+        for m in (sorted(e.sg) if sc else sorted(e.ref.per_model_p_m)):
             for period, gp in g.groupby("period"):
                 if len(gp) >= a.min_docs:
                     rows.append(dict(model=m, lang=lang, instance=inst, period=period, n_docs=len(gp),
-                                     alpha=e.estimate(to_sets(gp.tokens), n_boot=0, model=m)["alpha"]))
+                                     alpha=e.estimate(gp.score.values if sc else to_sets(gp.tokens), n_boot=0, model=m)["alpha"]))
     pd.DataFrame(rows).to_csv(out / "alpha_single_generator.csv", index=False)
 
     # robustness: pooled (language-level) vs adapted reference on the same cells
@@ -364,7 +400,7 @@ def main():
             continue
         for period, gp in g.groupby("period"):
             if len(gp) >= a.min_docs:
-                sets = to_sets(gp.tokens)
+                sets = gp.score.values if a.scores else to_sets(gp.tokens)
                 rows.append(dict(lang=lang, instance=inst, period=period, n_docs=len(gp),
                                  alpha_pooled=refs.base[lang].estimate(sets, n_boot=0)["alpha"],
                                  alpha_adapted=refs.get(inst, lang).estimate(sets, n_boot=0)["alpha"]))

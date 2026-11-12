@@ -29,6 +29,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize_scalar
 from scipy.stats import beta as beta_dist
 
@@ -93,7 +94,8 @@ class DistributionalEstimator:
 
     def __init__(self, selection: str = "ratio", top_k: int = 1000, min_df: float = 0.005,
                  smoothing: float = 0.5, pos_filter: set[str] | None = None, seed: int = 0,
-                 likelihood: str = "occurrence", split_selection: bool = True, model_weights: dict | None = None):
+                 likelihood: str = "occurrence", split_selection: bool = True, model_weights: dict | None = None,
+                 stable_q: float = 0.1, min_group: int = 40):
         """
         selection: 'ratio'  -> top_k lemmas by |log(p_m/p_h)| (symmetric; excess + deficit)
                    'ratio_pos' -> as 'ratio', restricted to lemmas whose POS tag is in pos_filter
@@ -116,6 +118,9 @@ class DistributionalEstimator:
         self.likelihood = likelihood
         self.split_selection = split_selection
         self.model_weights = dict(model_weights) if model_weights else None   # generator -> weight in P_M (None: equal)
+        # 'stable' selection: |log(p_m/p_h,g)| must hold with the same sign in every human group g (e.g. instance x year);
+        # lemmas are ranked by the stable_q quantile over groups of the signed log-ratio (0 when the sign changes)
+        self.stable_q, self.min_group = stable_q, min_group
         self.rng = np.random.default_rng(seed)
         self.ref: ReferenceDistribution | None = None
 
@@ -130,18 +135,27 @@ class DistributionalEstimator:
         return np.tensordot(w, np.stack([per_model[m] for m in keys]), axes=1)
 
     # ------------------------------------------------------------------ reference
-    def fit_reference(self, human_docs, llm_docs_by_model: dict, selection_docs=None):
+    def fit_reference(self, human_docs, llm_docs_by_model: dict, selection_docs=None, human_groups=None):
         """Build P_H and P_M from token lists (or sets) per document. If selection_docs is given,
         vocabulary selection uses that (held-out) split and probabilities are estimated on
         human_docs/llm_docs_by_model, avoiding selection bias."""
         human_docs = [list(d) for d in human_docs]
         llm_docs_by_model = {m: [list(d) for d in docs] for m, docs in llm_docs_by_model.items()}
-        if selection_docs is None and self.selection in ("ratio", "excess", "ratio_pos") and self.split_selection:
+        sel_groups = None
+        if self.selection == "stable":
+            assert human_groups is not None and len(human_groups) == len(human_docs), "stable selection needs human_groups"
+            human_groups = list(human_groups)
+        if selection_docs is None and self.selection in ("ratio", "excess", "ratio_pos", "stable") and self.split_selection:
             # avoid selection bias: rank lemmas on one random half of the reference, estimate probabilities on the other
             def halves(docs):
                 idx = self.rng.permutation(len(docs))
                 return [docs[i] for i in idx[: len(docs) // 2]], [docs[i] for i in idx[len(docs) // 2:]]
-            s_h, human_docs = halves(human_docs)
+            if human_groups is not None:
+                idx = self.rng.permutation(len(human_docs)); half = idx[: len(idx) // 2]
+                sel_groups = [human_groups[i] for i in half]
+                s_h = [human_docs[i] for i in half]; human_docs = [human_docs[i] for i in idx[len(idx) // 2:]]
+            else:
+                s_h, human_docs = halves(human_docs)
             s_m, rest = {}, {}
             for m, docs in llm_docs_by_model.items():
                 s_m[m], rest[m] = halves(docs)
@@ -173,7 +187,9 @@ class DistributionalEstimator:
         cand = [w for w in cand if (sel_df_h[w] + sel_df_m[w]) / n_tot >= self.min_df]
         if self.selection in ("pos", "ratio_pos"):
             cand = [w for w in cand if "|" in w and w.rsplit("|", 1)[1] in self.pos_filter]
-        if self.selection in ("ratio", "excess", "ratio_pos"):
+        if self.selection == "stable" and sel_groups is None:
+            sel_groups = human_groups
+        if self.selection in ("ratio", "excess", "ratio_pos", "stable"):
             ph = np.array([(sel_df_h[w] + self.smoothing) / (sel_n_h + 2 * self.smoothing) for w in cand])
             if self.model_weights:   # rank on the same weighted mixture that is estimated afterwards
                 sel_models = selection_docs[1] if selection_docs is not None else llm_docs_by_model
@@ -184,6 +200,22 @@ class DistributionalEstimator:
                 pm = np.array([(sel_df_m[w] + self.smoothing) / (sel_n_m + 2 * self.smoothing) for w in cand])
             lr = np.log(pm / ph)
             score = np.abs(lr) if self.selection in ("ratio", "ratio_pos") else lr
+            if self.selection == "stable":
+                s_h_docs = selection_docs[0] if selection_docs is not None else human_docs
+                grp = pd.Series(sel_groups)
+                keep = grp.map(grp.value_counts()) >= self.min_group
+                widx = {w: i for i, w in enumerate(cand)}
+                lrg = []
+                for g in grp[keep].unique():
+                    docs_g = [s_h_docs[i] for i in np.flatnonzero((grp == g).values & keep.values)]
+                    dfg = doc_frequency(docs_g)
+                    phg = np.array([(dfg[w] + self.smoothing) / (len(docs_g) + 2 * self.smoothing) for w in cand])
+                    lrg.append(np.log(pm / phg))
+                if lrg:
+                    L = np.vstack(lrg)
+                    pos = np.quantile(L, self.stable_q, axis=0)          # LLM-overused in (almost) every group
+                    neg = -np.quantile(L, 1 - self.stable_q, axis=0)     # LLM-underused in (almost) every group
+                    score = np.maximum(np.maximum(pos, neg), 0.0)
             order = np.argsort(-score)[: self.top_k]
             cand = [cand[i] for i in order]
         vocab = sorted(cand)

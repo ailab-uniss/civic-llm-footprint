@@ -15,6 +15,7 @@ import hashlib
 import re
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from lingua import Language, LanguageDetectorBuilder
 
@@ -109,6 +110,15 @@ def load_allowlist(cfg_path: str | None, instance: str) -> list[str] | None:
     return [str(x) for x in ent["langs"]]
 
 
+def detect_languages_full(texts: list[str]) -> list[str]:
+    """Language among all the languages of the detector. A text in a language outside LINGUA_LANGS (for instance Czech,
+    Slovak or Hungarian feedback on the EU portal) is assigned by the restricted detector to the nearest candidate with full
+    confidence; a text is kept only when this second identification agrees with the first."""
+    det = LanguageDetectorBuilder.from_all_languages().build()
+    res = det.detect_languages_in_parallel_of([t[:2000] for t in texts])
+    return [r.iso_code_639_1.name.lower() if r is not None else "" for r in res]
+
+
 def run(inp: Path, out: Path, min_words: int = 30, min_conf: float = 0.9, n_process: int = 4,
         instances_cfg: str | None = None):
     df = pd.read_parquet(inp)
@@ -131,6 +141,7 @@ def run(inp: Path, out: Path, min_words: int = 30, min_conf: float = 0.9, n_proc
     # keep high-confidence; also accept when detector agrees with declared language at lower confidence
     keep = (df["lang_conf"] >= min_conf) | ((df["lang"] == df["lang_declared"]) & (df["lang_conf"] >= 0.6))
     df = df[keep & (df["lang"] != "")].copy()
+    df = df[np.array(detect_languages_full(df["text"].tolist())) == df["lang"].values].copy()
     df["text_hash"] = df["text"].map(lambda s: hashlib.md5(s.lower().encode()).hexdigest())
     df["is_dup_exact"] = df.duplicated("text_hash", keep="first")
     df["period"] = (df["created_at"] >= CHATGPT_RELEASE).map({True: "post", False: "pre"})

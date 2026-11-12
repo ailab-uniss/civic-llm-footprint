@@ -1,7 +1,7 @@
 #!/bin/bash
 # Local (Windows/Git Bash) run of a commercial generator through its OpenAI-compatible chat API.
 # usage: [BACKEND=openai|anthropic|gemini] [MODEL=..] [TAG=..] [LIMIT=..] ./scripts/run_openai_gen.sh [gen|audit]
-# Keys are read from C:\CODICI\IEEEACCESSPAPER\.env. Resumable (appends to the output parquet).
+# Keys are read from a local .env file (never committed). Resumable (appends to the output parquet).
 cd "$(dirname "$0")/.."
 for k in OPENAI_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY; do
   export $k=$(grep "^$k=" ../.env | cut -d= -f2- | tr -d '\r')

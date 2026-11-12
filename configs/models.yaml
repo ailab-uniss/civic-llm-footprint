@@ -24,3 +24,5 @@ generators:
                       args: "--backend gemini --limit-per-lang 800"}
   gpt-4o-mini:       {path: gpt-4o-mini-2024-07-18, family: "OpenAI (API, July 2024)", params: undisclosed, quant: n/a, role: legacy,
                       args: "--backend openai --limit-per-lang 400"}
+  gpt-4o:            {path: gpt-4o-2024-08-06, family: "OpenAI (API, August 2024)", params: undisclosed, quant: n/a, role: legacy,
+                      args: "--backend openai --limit-per-lang 200"}

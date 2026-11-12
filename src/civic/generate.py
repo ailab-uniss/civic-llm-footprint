@@ -77,7 +77,8 @@ def make_sample(processed_dir: Path, out_dir: Path, n: int, langs: list[str], se
         rows = rows[:total]
         out.append(g.loc[rows])
     sample = pd.concat(out, ignore_index=True)
-    sample["doc_id"] = sample["instance"] + ":" + sample["type"] + ":" + sample["id"].astype(str) + ":" + sample["lang"]
+    if "doc_id" not in sample.columns:   # the seed keeps the identifier of its processed text: generated texts inherit its fold
+        sample["doc_id"] = sample["instance"] + ":" + sample["type"] + ":" + sample["id"].astype(str) + ":" + sample["lang"]
     out_dir.mkdir(parents=True, exist_ok=True)
     sample.to_parquet(out_dir / "human_sample.parquet", index=False)
     print(sample.groupby(["lang", "instance", "type"]).size().to_string())

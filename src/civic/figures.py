@@ -36,6 +36,7 @@ plt.rcParams.update({
     "legend.frameon": False, "pdf.fonttype": 42, "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
 })
 COL_W, FULL_W = 3.45, 7.1  # IEEE column / full width in inches
+PARTIAL_YEAR, PARTIAL_LABEL = 2026, "Jan–Nov"  # last year of data is incomplete (collection ended Nov 2026)
 
 
 def style(ax, grid="y"):
@@ -113,25 +114,31 @@ def fig_calibration(raw: pd.DataFrame, out: Path, langs: list[str] | None = None
         base = [d[d.method.isin(base)].groupby("method").err.mean().idxmin()]
     methods = ["distributional"] + base
     langs = langs or sorted(d.lang.unique())
-    fig, axes = plt.subplots(1, len(methods), figsize=(COL_W, 2.0), sharex=True, sharey=True, squeeze=False)
+    # every language gets its own marker (and the two colour-close pairs, German/Portuguese and English/French,
+    # also differ in line style) so that the curves stay distinguishable in greyscale
+    markers = ["o", "s", "^", "D", "v", "P", "X", "<", "h"]
+    dashed = {"pt", "fr"}
+    ymax = d[d.method.isin(methods)].groupby(["method", "lang", "alpha"]).alpha_hat.mean().max()
+    ytop = max(0.55, float(np.ceil((ymax + 0.04) * 20) / 20))
+    fig, axes = plt.subplots(1, len(methods), figsize=(COL_W, 2.45), sharex=True, sharey=True, squeeze=False)
     for k, meth in enumerate(methods):
         ax = axes[0][k]
-        ax.plot([0, 0.5], [0, 0.5], color=LIGHT, lw=1, zorder=1)
+        ax.plot([0, 1], [0, 1], color=GREY, lw=0.9, ls=(0, (4, 2)), zorder=2)
         for i, lang in enumerate(langs):
             gg = d[(d.lang == lang) & (d.method == meth)].groupby("alpha").alpha_hat.mean()
             if gg.empty:
                 continue
-            ax.plot(gg.index, gg.values, color=CAT[i % len(CAT)], lw=1.4, marker="o", ms=2.5,
-                    label=LANG_NAMES.get(lang, lang), zorder=3)
+            ax.plot(gg.index, gg.values, color=CAT[i % len(CAT)], lw=1.2, marker=markers[i % len(markers)], ms=3.2,
+                    mew=0, ls=(0, (3, 1.5)) if lang in dashed else "-", label=LANG_NAMES.get(lang, lang), zorder=3)
         ax.set_title(METHOD_LABELS.get(meth, meth), loc="left")
         style(ax, grid="both")
         ax.set_xlim(-0.01, 0.52)
-        ax.set_ylim(-0.01, 0.72)
+        ax.set_ylim(-0.01, ytop)
         ax.set_xlabel("True $\\alpha$")
         if k == 0:
             ax.set_ylabel("Estimated $\\hat\\alpha$")
     h, l = axes[0][0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=min(5, len(l)), bbox_to_anchor=(0.5, -0.12), handlelength=1.5, columnspacing=0.9)
+    fig.legend(h, l, loc="lower center", ncol=min(5, len(l)), bbox_to_anchor=(0.5, -0.12), handlelength=2.0, columnspacing=0.9)
     fig.tight_layout()
     fig.savefig(out / "fig_calibration.pdf"); fig.savefig(out / "fig_calibration.png", dpi=150)
     plt.close(fig)
@@ -199,23 +206,46 @@ def fig_consultations(cells: pd.DataFrame, out: Path, instance_names: dict | Non
     n = len(panels)
     ncol = min(3, n)
     nrow = int(np.ceil(n / ncol))
+    # one time convention for points and medians: a process sits at the decimal date of its median text, a yearly
+    # median at mid-year (year + 0.5); common x range, ticks and y range across panels so that they are comparable
+    if "created_at" in cells:
+        t = pd.to_datetime(cells.created_at, utc=True)
+        cells["t"] = t.dt.year + (t.dt.dayofyear - 0.5) / np.where(t.dt.is_leap_year, 366, 365)
+    else:
+        cells["t"] = cells.year + 0.5
+    sel = cells[[(i, l) in set(panels) for i, l in zip(cells.instance, cells.lang)]]
+    y0 = int(sel.year.min())
+    xlo = float(sel.t.min())
+    y0 -= (y0 % 2)  # even-year ticks
+    y1 = int(sel.year.max())
+    ytop = float(np.ceil((sel.alpha.max() + 0.04) * 10) / 10)
     fig, axes = plt.subplots(nrow, ncol, figsize=(FULL_W, 1.9 * nrow + 0.3), sharey=True, squeeze=False)
     rng = np.random.default_rng(0)
     for k, (inst, lang) in enumerate(panels):
         ax = axes[k // ncol][k % ncol]
         g = cells[(cells.instance == inst) & (cells.lang == lang)].copy()
-        x = g.year + rng.uniform(-0.22, 0.22, len(g))
+        x = g.t + rng.uniform(-0.04, 0.04, len(g))
         size = 6 + 10 * np.log10(g.n_docs / 100)
         ax.scatter(x, g.alpha, s=size, color=CAT[0], alpha=0.55, lw=0, zorder=3)
         med = g.groupby("year").alpha.median()
-        ax.plot(med.index, med.values, color=CAT[1], lw=1.4, marker="_", ms=9, mew=1.6, zorder=4)
+        mx = med.index.values + 0.5
+        full = med.index.values != PARTIAL_YEAR
+        nfull = int(full.sum())
+        ax.plot(mx[:nfull], med.values[:nfull], color=CAT[1], lw=1.4, zorder=4)
+        ax.plot(mx[full], med.values[full], ls="", marker="o", ms=3.6, color=CAT[1], mec="white", mew=0.6, zorder=5)
+        if (~full).any():  # partial last year: dotted link and open marker, as in the Madrid series
+            ax.plot(mx[nfull - 1:], med.values[nfull - 1:], color=CAT[1], lw=1.2, ls=(0, (1.5, 1.2)), zorder=4)
+            ax.plot(mx[~full], med.values[~full], ls="", marker="o", ms=3.6, mfc="white", mec=CAT[1], mew=1.1, zorder=5)
         ax.axvline(2022.91, color=GREY, ls="--", lw=0.8)
         name = (instance_names or {}).get(inst, inst)
         ax.set_title(f"{name} ({LANG_NAMES.get(lang, lang)})", loc="left", fontsize=7.5)
         style(ax, grid="y")
-        from matplotlib.ticker import MaxNLocator
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=5))
-        ax.set_ylim(-0.02, 1.0)
+        ax.set_xticks(range(y0 + 2 * (y0 < xlo), y1 + 1, 2))
+        ax.set_xlim(xlo - 0.3, y1 + 1.2)
+        ax.set_ylim(-0.02, ytop)
+        if k == 0:
+            ax.text(0.02, 0.97, f"open marker: {PARTIAL_YEAR} ({PARTIAL_LABEL})", transform=ax.transAxes,
+                    ha="left", va="top", fontsize=6.3, color=GREY)
         if k % ncol == 0:
             ax.set_ylabel("$\\hat\\alpha$ (LLM share)")
     for k in range(n, nrow * ncol):

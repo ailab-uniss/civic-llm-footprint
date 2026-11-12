@@ -1,0 +1,11 @@
+# Generator weights of the reference of the study (`analysis.py --weights`): vendor shares, split over the models of the vendor.
+# Vendor shares as in reference_weights.yaml (StatCounter, AI chatbot market share, Europe, April 2025 - September 2026:
+# ChatGPT + Copilot 91.9%, Gemini 6.2%, Claude 1.9% after renormalisation). ChatGPT is represented by the three OpenAI models
+# that could be queried and that were its default models over the study period (GPT-4o and GPT-4o mini of 2024, GPT-5.4 mini of
+# 2026), with equal shares, instead of by its current model only: the texts of 2023-2025 were not written with the model of 2026.
+weights:
+  gpt-5.4-mini: 0.3063
+  gpt-4o: 0.3063
+  gpt-4o-mini: 0.3064
+  gemini-3.6-flash: 0.062
+  claude-haiku-5-5: 0.019

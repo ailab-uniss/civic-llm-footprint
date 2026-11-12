@@ -50,7 +50,7 @@ def sync():
     n = 0
     for m in re.finditer(r"^% >>> ([a-z_]+) \(generated.*?\)\n.*?^% <<< \1$", main, flags=re.M | re.S):
         name = m.group(1)
-        src = P / ("numbers.tex" if name == "numbers" else f"tables/{name}.tex")
+        src = P / (f"{name}.tex" if name.startswith("numbers") else f"tables/{name}.tex")
         if not src.exists():
             continue
         new = block(name, src.read_text(encoding="utf-8"))

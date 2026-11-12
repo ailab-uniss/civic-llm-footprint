@@ -71,7 +71,7 @@ def context(text: str, ref: str, width: int = 160) -> str:
 
 
 def score():
-    X = pd.ExcelFile(OUT / "consumer_check.xlsx"); runs = X.parse("runs")
+    f = OUT / "consumer_check_completed.xlsx"; X = pd.ExcelFile(f if f.exists() else OUT / "consumer_check.xlsx"); runs = X.parse("runs")
     pairs = pd.read_csv("../audit_manual_check/pairs.csv").set_index("pair_id")
     runs = runs[runs.C3_answer_text.notna()].copy()
     runs["orig"] = runs.pair_id.map(pairs.original_text)

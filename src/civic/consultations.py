@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from analysis import CHATGPT, References, estimate_cells, half_year, split_author_type  # noqa: E402
+from analysis import CHATGPT, References, attach_scores, estimate_cells, half_year, split_author_type  # noqa: E402
 
 
 def consultation_id(df: pd.DataFrame) -> pd.Series:
@@ -58,6 +58,8 @@ def main():
     ap.add_argument("--n-boot", type=int, default=300)
     ap.add_argument("--weights", default="")
     ap.add_argument("--exclude-models", nargs="*", default=[])
+    ap.add_argument("--scores", default="")
+    ap.add_argument("--templates", default="", help="templated-campaign flags (templates.py): estimates also without them")
     a = ap.parse_args()
     if a.weights:
         import yaml
@@ -73,6 +75,10 @@ def main():
     H = H[~H.is_dup_exact].drop_duplicates("doc_id").copy()
     H["instance_raw"] = H.instance
     H["instance"] = split_author_type(H.instance, H["user_type"] if "user_type" in H.columns else None)
+    if a.templates:
+        T = pd.read_parquet(a.templates)[["doc_id", "is_template"]].drop_duplicates("doc_id")
+        H = H.merge(T, on="doc_id", how="left")
+        H["is_template"] = H["is_template"].fillna(False).astype(bool)
     G = pd.read_parquet(a.gen)
     if a.exclude_models:
         G = G[~G.model.isin(a.exclude_models)]
@@ -80,7 +86,12 @@ def main():
     G["inst"] = G.doc_id.map(seed_inst).fillna(G.doc_id.str.split(":").str[0])
     S = pd.read_parquet(a.sample, columns=["doc_id", "lang", "instance"])
     S["instance"] = S.doc_id.map(seed_inst).fillna(S.instance)
-    refs = References(H, G, S, a)
+    if a.scores:
+        from score_estimator import ScoreReferences
+        H, G = attach_scores(H, G, a.scores)
+        refs = ScoreReferences(H, G, a.weights, a.min_ref)
+    else:
+        refs = References(H, G, S, a)
 
     D = H.copy()
     D["consultation"] = consultation_id(D)
